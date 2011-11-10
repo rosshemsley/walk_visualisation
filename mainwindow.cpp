@@ -26,7 +26,6 @@ MainWindow::MainWindow()
 {
     
     scene = new QGraphicsScene();
-
     view  = new QGraphicsView(scene);
   
     CGAL::Qt::GraphicsViewNavigation navigation;
@@ -38,6 +37,7 @@ MainWindow::MainWindow()
     setCentralWidget(view);
     
 
+    randomTriangulation(*scene);
 }
 
 

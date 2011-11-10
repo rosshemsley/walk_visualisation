@@ -41,8 +41,8 @@ if ( CGAL_FOUND AND CGAL_Qt4_FOUND AND QT4_FOUND )
 	
 	ADD_EXECUTABLE(walk_visualisation ${walk_visualisation_SOURCES} 
 	    ${walk_visualisation_HEADERS_MOC})
-	TARGET_LINK_LIBRARIES(walk_visualisation ${QT_LIBRARIES})
-
+	
+	
   
 
 
