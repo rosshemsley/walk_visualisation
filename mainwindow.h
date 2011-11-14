@@ -38,6 +38,8 @@ public:
 private:
     void drawTriangle(Face_handle f, QGraphicsScene &scene);
     void randomTriangulation(QGraphicsScene &scene);
+    void straightWalk(Point p, Point q);
+    
     
     
     QGraphicsView*            view;
