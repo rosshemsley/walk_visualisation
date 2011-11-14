@@ -2850,10 +2850,7 @@ exact_locate(const Point& p,
        int& li,
        Face_handle start) const
 #endif // no CGAL_NO_STRUCTURAL_FILTERING
-{
-    
-    std::cout << "Using modified header";
-    
+{   
   if (dimension() < 0) {
       lt = OUTSIDE_AFFINE_HULL;
       li = 4; // li should not be used in this case

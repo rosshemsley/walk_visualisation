@@ -34,6 +34,8 @@ class MainWindow : public QMainWindow
 
 public:
     MainWindow();
+    
+    void mousePressEvent(QMouseEvent *event);
 
 private:
     void drawTriangle(Face_handle f, QGraphicsScene &scene);

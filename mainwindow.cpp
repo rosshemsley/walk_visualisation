@@ -38,6 +38,14 @@ MainWindow::MainWindow()
 
 /*****************************************************************************/
 
+void MainWindow::mousePressEvent(QMouseEvent *event)
+{
+  qDebug() << "Mouse button clicked at position: "
+           << event->pos();
+}
+
+/*****************************************************************************/
+
 // Use this to draw a triangle specified by a face.
 void MainWindow::drawTriangle(Face_handle f, QGraphicsScene &scene)
 {
