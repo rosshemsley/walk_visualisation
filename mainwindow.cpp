@@ -28,6 +28,9 @@ MainWindow::MainWindow()
     scene = new QGraphicsScene();
     view  = new QGraphicsView(scene);
   
+  
+    view->setSceneRect(-500,-500,1000,1000);
+    
     CGAL::Qt::GraphicsViewNavigation navigation;
     view->installEventFilter(&navigation);
     view->viewport()->installEventFilter(&navigation);
@@ -54,7 +57,7 @@ void MainWindow::drawTriangle(Delaunay::Face_handle &f, QGraphicsScene &scene)
 
 void MainWindow::randomTriangulation(QGraphicsScene &scene)
 {
-    CGAL::Random_points_in_square_2<Point,Creator> g(50.);
+    CGAL::Random_points_in_square_2<Point,Creator> g(500.);
 
     CGAL::copy_n( g, 100, std::back_inserter(dt));
 
