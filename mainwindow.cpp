@@ -241,8 +241,8 @@ void MainWindow::randomTriangulation()
                                           Qt::RoundJoin ));
     scene->addItem(tgi);
 
-    view->setSceneRect(dgi->boundingRect());
-    view->fitInView(dgi->boundingRect(), Qt::KeepAspectRatio);
+    view->setSceneRect(tgi->boundingRect());
+    view->fitInView(tgi->boundingRect(), Qt::KeepAspectRatio);
     
     dt.locate(Point(100,200));
 
