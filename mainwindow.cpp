@@ -1,3 +1,8 @@
+/******************************************************************************
+* Written by Ross Hemsley for INRIA.fr. 
+* A simple application visualise different walks on Delaunay Triangulations.
+******************************************************************************/
+
 #include <iostream>
 #include <fstream>
 #include <boost/format.hpp>
@@ -37,6 +42,10 @@ void MainWindow::newWalk()
 
 void MainWindow::updateScene()
 {
+    // Style for points.
+    QPen   pen(Qt::blue);
+    QBrush brush(Qt::blue);
+    
     // Remove all the previous walkItems, that is, the previous triangles
     // drawn as part of the walk.
     while (! walkItems.isEmpty() )
@@ -46,11 +55,9 @@ void MainWindow::updateScene()
     if (inputPoints > 0) 
         straightWalk(c(points[0]), c(points[1]));    
 
+    // Draw the walk end points.
     for (int i=0; i<inputPoints; i++)
-    {
-        QPen   pen(Qt::blue);
-        QBrush brush(Qt::blue);
-        
+    {        
         QPoint p = points[i].toPoint();
         walkItems.append(scene->addEllipse(QRect(p, QSize(10,10)),pen,brush));
     }
@@ -87,7 +94,7 @@ MainWindow::MainWindow()
     topFiller->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     
     QWidget *bottomFiller = new QWidget;
-    bottomFiller->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);    
+    bottomFiller->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);    
         
     QVBoxLayout *layout = new QVBoxLayout;
     layout->setMargin(5);
@@ -116,6 +123,7 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event)
         
         switch(event->type())
         {            
+            
             // ** MOUSE BUTTON RELEASE ** //
             case QEvent::GraphicsSceneMouseRelease:
             {
@@ -245,10 +253,7 @@ void MainWindow::randomTriangulation()
     view->fitInView(tgi->boundingRect(), Qt::KeepAspectRatio);
     
     dt.locate(Point(100,200));
-
 }
 
 /*****************************************************************************/
-
-
 
