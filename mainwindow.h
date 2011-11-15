@@ -45,7 +45,7 @@ private:
     void createMenus();
     void createActions();    
     QGraphicsPolygonItem* drawTriangle(Face_handle f);
-    void randomTriangulation(QGraphicsScene &scene);
+    void randomTriangulation();
     void straightWalk(Point p, Point q);
     
     

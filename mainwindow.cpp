@@ -22,6 +22,9 @@
 
 void MainWindow::newWalk()
 {
+    // Clear any old walk graphics from the scene.
+    updateScene();
+    
     // We are going to start taking point inputs.
     // This says that we are currently learning point 1.
     inputPoints = 0;
@@ -91,7 +94,7 @@ MainWindow::MainWindow()
     statusBar()->showMessage(message);    
 
     // Create and draw a random triangulation to the graphics view.
-    randomTriangulation(*scene);    
+    randomTriangulation();    
 }
 
 /*****************************************************************************/
@@ -111,20 +114,16 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event)
 
                 if (mouseEvent->button() == Qt::LeftButton)
                 {
-                    // If we are adding points to the scene
                     if (inputPoints >= 0)
-                    {
-                        if (inputPoints == 2) 
-                        {
-                            // We've finished adding points now.
-                            view->setCursor(Qt::ArrowCursor);                         
-                            straightWalk(c(points[0]), c(points[1]));
-                            inputPoints = -1;                     
-                        } else {
-                            // Add the current point and increment.
-                            points[inputPoints++] = mouseEvent->scenePos();                                                     
-                        }
-                    }
+                        points[inputPoints++] = mouseEvent->scenePos();
+                    
+                    if (inputPoints == 2)
+                    {                        
+                        // We've finished adding points now.
+                        view->setCursor(Qt::ArrowCursor);                         
+                        straightWalk(c(points[0]), c(points[1]));
+                        inputPoints = -1;                                        
+                    }   
                 }
                 return true;
             }             
@@ -134,7 +133,7 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event)
             {
                 if (inputPoints >=0)
                 {
-                    mouseEvent = static_cast<QGraphicsSceneMouseEvent*>(event);                
+                    mouseEvent = static_cast<QGraphicsSceneMouseEvent*>(event);            
                     points[1] = mouseEvent->scenePos();
                     updateScene();            
                 }
@@ -227,7 +226,7 @@ void MainWindow::randomTriangulation()
 
     // Create a triangulation and add to the scene
     tgi = new QTriangulationGraphics(&dt);
-    tgi->setVerticesPen(QPen(Qt::red, 10, Qt::SolidLine, 
+    tgi->setVerticesPen(QPen(Qt::red, 5 , Qt::SolidLine, 
                                           Qt::RoundCap, 
                                           Qt::RoundJoin ));
     scene->addItem(tgi);
