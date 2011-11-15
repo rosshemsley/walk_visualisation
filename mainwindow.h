@@ -56,7 +56,7 @@ private:
     Delaunay                    dt;
     CGAL::Qt::Converter<K>       c;
     QTriangulationGraphics*    tgi; 
-    QList<QGraphicsPolygonItem*>      walkItems;
+    QList<QGraphicsItem*>      walkItems;
      
     // When we are taking points as input we use the following.
     // if inputPoints < 0 we are not learning points.

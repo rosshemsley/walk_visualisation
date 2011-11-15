@@ -21,16 +21,16 @@
 /*****************************************************************************/
 
 void MainWindow::newWalk()
-{
-    // Clear any old walk graphics from the scene.
-    updateScene();
-    
+{    
     // We are going to start taking point inputs.
     // This says that we are currently learning point 1.
     inputPoints = 0;
     
     // Set the mouse to a crosshair when moving over the grahpics view.
     view->setCursor(Qt::CrossCursor);   
+    
+    // Clear any old walk graphics from the scene.
+    updateScene();    
 }
 
 /*****************************************************************************/
@@ -43,8 +43,17 @@ void MainWindow::updateScene()
         scene->removeItem(walkItems.takeFirst());
 
     // If we have enough data to plot a walk, then do so.
-    if (inputPoints==1) 
-          straightWalk(c(points[0]), c(points[1]));    
+    if (inputPoints > 0) 
+        straightWalk(c(points[0]), c(points[1]));    
+
+    for (int i=0; i<inputPoints; i++)
+    {
+        QPen   pen(Qt::blue);
+        QBrush brush(Qt::blue);
+        
+        QPoint p = points[i].toPoint();
+        walkItems.append(scene->addEllipse(QRect(p, QSize(10,10)),pen,brush));
+    }
 }
 
 /*****************************************************************************/
@@ -110,28 +119,29 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event)
             // ** MOUSE BUTTON RELEASE ** //
             case QEvent::GraphicsSceneMouseRelease:
             {
-                mouseEvent = static_cast<QGraphicsSceneMouseEvent*>(event);
+                mouseEvent   = static_cast<QGraphicsSceneMouseEvent*>(event);
+                QPointF pos = mouseEvent->scenePos();
 
                 if (mouseEvent->button() == Qt::LeftButton)
                 {
-                    if (inputPoints >= 0)
-                        points[inputPoints++] = mouseEvent->scenePos();
+                    if (inputPoints == 0 || inputPoints == 1)
+                        points[inputPoints++] = pos;
                     
                     if (inputPoints == 2)
                     {                        
                         // We've finished adding points now.
                         view->setCursor(Qt::ArrowCursor);                         
-                        straightWalk(c(points[0]), c(points[1]));
-                        inputPoints = -1;                                        
+                        updateScene();
                     }   
                 }
                 return true;
             }             
 
+
             // ** MOUSE MOVED ** //            
             case QEvent::GraphicsSceneMouseMove:
             {
-                if (inputPoints >=0)
+                if (inputPoints == 1)
                 {
                     mouseEvent = static_cast<QGraphicsSceneMouseEvent*>(event);            
                     points[1] = mouseEvent->scenePos();
