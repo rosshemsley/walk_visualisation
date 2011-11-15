@@ -38,7 +38,8 @@ protected:
     bool eventFilter(QObject *obj, QEvent *event);    
 
 private slots:
-    void newFile();    
+    void newWalk();    
+    void updateScene();
 
 private:
     void createMenus();
@@ -55,6 +56,11 @@ private:
     Delaunay                    dt;
     CGAL::Qt::Converter<K>       c;
     
+    // When we are taking points as input we use the following.
+    // if inputPoints < 0 we are not learning points.
+    // if it is positive we are learning points[inputPoints]
+    int                inputPoints;
+    QPointF              points[2];
 
 }; 
 

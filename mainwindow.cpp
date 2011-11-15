@@ -20,22 +20,43 @@
 
 /*****************************************************************************/
 
-
-void MainWindow::newFile()
+void MainWindow::newWalk()
 {
+
+    // We are going to start taking point inputs.
+    // This says that we are currently learning point 1.
+    inputPoints = 0;
+    
+    // Set the mouse to a crosshair when moving over the grahpics view.
+    view->setCursor(Qt::CrossCursor);
+    
+    
+    
     qDebug() << "Clicked ";
+}
+
+/*****************************************************************************/
+
+void MainWindow::updateScene()
+{
+    qDebug() << "Updating scene";
 }
 
 /*****************************************************************************/
 
 MainWindow::MainWindow()
 {
+    inputPoints = false;
+    
     // This is where we draw items to.
     scene = new QGraphicsScene();
     view  = new QGraphicsView(scene);
   
   
     scene->installEventFilter(this);
+    
+    view->installEventFilter(this);
+    view->setMouseTracking(true); 
     
   
     // Define extend of the viewport.
@@ -75,16 +96,45 @@ MainWindow::MainWindow()
 
 bool MainWindow::eventFilter(QObject *obj, QEvent *event)
 {
-    if (obj == scene) {
-        if (event->type() == QEvent::GraphicsSceneMouseRelease	) {
-            qDebug() << "Ate key press";
-            return true;
-        } else {
-            return false;
+    if (obj == scene)
+    {
+        switch(event->type())
+        {
+            case QEvent::GraphicsSceneMouseRelease:
+            { 
+                QGraphicsSceneMouseEvent* mouseEvent = static_cast<QGraphicsSceneMouseEvent*>(event);
+
+                if (mouseEvent->button() == Qt::LeftButton)
+                {
+                    // If we are adding points to the scene
+                    if (inputPoints >=0)
+                    {
+                        if (inputPoints==2) 
+                        {
+                            straightWalk(c(points[0]), c(points[1]));
+                            inputPoints = 0;                            
+                        } else {
+                            points[inputPoints] = mouseEvent->scenePos();                        
+                            inputPoints ++;
+                        }                        
+                    }
+                    qDebug() << "Ate key press";
+                }
+                return true;
+            }
+            
+            case QEvent::GraphicsSceneMouseMove:
+            {
+                qDebug() << "mouse move";
+                updateScene();            
+            }
+            
+            default:
+            {
+                // pass the event on to the parent class
+                return QMainWindow::eventFilter(obj, event);  
+            }
         }
-    } else {
-        // pass the event on to the parent class
-        return QMainWindow::eventFilter(obj, event);
     }
 }
 
@@ -102,7 +152,7 @@ void MainWindow::createActions()
 {
     newAct = new QAction(tr("&New"), this);
     newAct->setStatusTip(tr("Create a new file"));
-    connect(newAct, SIGNAL(triggered()), this, SLOT(newFile()));
+    connect(newAct, SIGNAL(triggered()), this, SLOT(newWalk()));
 }
 
 /*****************************************************************************/
