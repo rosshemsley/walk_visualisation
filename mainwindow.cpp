@@ -194,7 +194,7 @@ QGraphicsPolygonItem* MainWindow::drawTriangle(Face_handle f)
     
         // The "look" of the triangle.
         polygonItem->setPen( QPen(Qt::darkGreen) );
-        polygonItem->setBrush( Qt::yellow );    
+        polygonItem->setBrush( QColor("#D2CAEB") );    
     
         return polygonItem;
     }
@@ -241,9 +241,8 @@ void MainWindow::randomTriangulation()
                                           Qt::RoundJoin ));
     scene->addItem(tgi);
 
-    
-    view->fitInView(tgi->boundingRect(), Qt::KeepAspectRatio);  
-    
+    view->setSceneRect(dgi->boundingRect());
+    view->fitInView(dgi->boundingRect(), Qt::KeepAspectRatio);
     
     dt.locate(Point(100,200));
 
