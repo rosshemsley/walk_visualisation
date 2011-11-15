@@ -22,64 +22,57 @@
 
 void MainWindow::newWalk()
 {
-
     // We are going to start taking point inputs.
     // This says that we are currently learning point 1.
     inputPoints = 0;
     
     // Set the mouse to a crosshair when moving over the grahpics view.
-    view->setCursor(Qt::CrossCursor);
-    
-    
-    
-    qDebug() << "Clicked ";
+    view->setCursor(Qt::CrossCursor);   
 }
 
 /*****************************************************************************/
 
 void MainWindow::updateScene()
 {
-    qDebug() << "Updating scene";
-    
+    // Remove all the previous walkItems, that is, the previous triangles
+    // drawn as part of the walk.
+    while (! walkItems.isEmpty() )
+        scene->removeItem(walkItems.takeFirst());
 
-    while (!walk.isEmpty())
-        scene->removeItem(walk.takeFirst());
-
-  //  scene->addItem(tgi);
-
+    // If we have enough data to plot a walk, then do so.
     if (inputPoints==1) 
-    {
           straightWalk(c(points[0]), c(points[1]));    
-          qDebug() << "Drawing walk";
-    }
 }
 
 /*****************************************************************************/
 
 MainWindow::MainWindow()
 {
+    // The default state is to not take new input points.
     inputPoints = -1;
 
     // This is where we draw items to.
     scene = new QGraphicsScene();
     view  = new QGraphicsView(scene);
-  
-  
-    scene->installEventFilter(this);
-    
+
+    // Event filters for dealing with mouse input.
+    // These are attached to both the GrahpicsView and GraphicsScene.
+    scene->installEventFilter(this);    
     view->installEventFilter(this);
-    view->setMouseTracking(true); 
     
-  
-    // Define extend of the viewport.
+    // This allows us to receive events when the mouse moves.
+    view->setMouseTracking(true); 
+      
+    // Define extent of the viewport.
     view->setSceneRect(-400,-400,800,800);
    
+    // Container widget for the layout.
     QWidget *widget = new QWidget;
     setCentralWidget(widget);
 
+    // Upper and lower filler widgets.
     QWidget *topFiller = new QWidget;
-    topFiller->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);    
-    
+    topFiller->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     
     QWidget *bottomFiller = new QWidget;
     bottomFiller->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);    
@@ -90,10 +83,7 @@ MainWindow::MainWindow()
     layout->addWidget(view);
     layout->addWidget(bottomFiller);
     widget->setLayout(layout);    
-    
-    
-    //view->setCursor(Qt::CrossCursor);
-    
+        
     createActions();
     createMenus();
 
@@ -101,69 +91,60 @@ MainWindow::MainWindow()
     statusBar()->showMessage(message);    
 
     // Create and draw a random triangulation to the graphics view.
-    randomTriangulation(*scene);
-    
-    
+    randomTriangulation(*scene);    
 }
 
 /*****************************************************************************/
 
 bool MainWindow::eventFilter(QObject *obj, QEvent *event)
 {
-    
-    qDebug() << "input points:" << inputPoints << endl;
     if (obj == scene)
     {
+        QGraphicsSceneMouseEvent* mouseEvent;
+        
         switch(event->type())
-        {
-            
+        {            
+            // ** MOUSE BUTTON RELEASE ** //
             case QEvent::GraphicsSceneMouseRelease:
             {
-                QGraphicsSceneMouseEvent* mouseEvent = static_cast<QGraphicsSceneMouseEvent*>(event);
+                mouseEvent = static_cast<QGraphicsSceneMouseEvent*>(event);
 
                 if (mouseEvent->button() == Qt::LeftButton)
                 {
                     // If we are adding points to the scene
-                    if (inputPoints >=0)
+                    if (inputPoints >= 0)
                     {
-                        if (inputPoints==2) 
+                        if (inputPoints == 2) 
                         {
+                            // We've finished adding points now.
                             view->setCursor(Qt::ArrowCursor);                         
                             straightWalk(c(points[0]), c(points[1]));
                             inputPoints = -1;                     
                         } else {
-                            points[inputPoints] = mouseEvent->scenePos();       
-                            
-                            inputPoints ++;
-                        }                        
+                            // Add the current point and increment.
+                            points[inputPoints++] = mouseEvent->scenePos();                                                     
+                        }
                     }
-                    qDebug() << "Ate key press";
                 }
                 return true;
-                break;
-            }
-            
+            }             
+
+            // ** MOUSE MOVED ** //            
             case QEvent::GraphicsSceneMouseMove:
             {
-                QGraphicsSceneMouseEvent* mouseEvent = static_cast<QGraphicsSceneMouseEvent*>(event);
-                
-                points[1]           = mouseEvent->scenePos();
-                
-                qDebug() << "mouse move";
-                if (inputPoints>=0)
+                if (inputPoints >=0)
+                {
+                    mouseEvent = static_cast<QGraphicsSceneMouseEvent*>(event);                
+                    points[1] = mouseEvent->scenePos();
                     updateScene();            
+                }
                 return true;
-                break;
-            }
-            
-            default:
-                // pass the event on to the parent class
-                return QMainWindow::eventFilter(obj, event);  
+            }            
         }
-    } else {
-        // pass the event on to the parent class
-        return QMainWindow::eventFilter(obj, event);  
     }
+    
+    // pass the event on to the parent class
+    return QMainWindow::eventFilter(obj, event);
 }
 
 /*****************************************************************************/
@@ -178,17 +159,17 @@ void MainWindow::createMenus()
 
 void MainWindow::createActions()
 {
-    newAct = new QAction(tr("&New"), this);
-    newAct->setStatusTip(tr("Create a new file"));
+    newAct = new QAction(tr("&New Walk"), this);
+    newAct->setStatusTip(tr("Create a new Walk"));
     connect(newAct, SIGNAL(triggered()), this, SLOT(newWalk()));
 }
 
 /*****************************************************************************/
 
 // Use this to draw a triangle specified by a face.
-QGraphicsPolygonItem* MainWindow::drawTriangle(Face_handle f, QGraphicsScene &scene)
+QGraphicsPolygonItem* MainWindow::drawTriangle(Face_handle f)
 {
-
+    
     // Ignore infinite faces.
     if (! dt.is_infinite( f ) ) 
     {
@@ -200,7 +181,7 @@ QGraphicsPolygonItem* MainWindow::drawTriangle(Face_handle f, QGraphicsScene &sc
                 << c(f->vertex(1)->point()) 
                 << c(f->vertex(2)->point());
                 
-        polygonItem = new QGraphicsPolygonItem(QPolygonF(polygon), 0, &scene);
+        polygonItem = new QGraphicsPolygonItem(QPolygonF(polygon));
     
         // The "look" of the triangle.
         polygonItem->setPen( QPen(Qt::darkGreen) );
@@ -208,6 +189,8 @@ QGraphicsPolygonItem* MainWindow::drawTriangle(Face_handle f, QGraphicsScene &sc
     
         return polygonItem;
     }
+    
+    return 0;
 }
 
 /*****************************************************************************/
@@ -218,20 +201,25 @@ void MainWindow::straightWalk(Point p, Point q)
     // Create a circulator describing the walk.
     Line_face_circulator lfc = dt.line_walk (p,q), done(lfc);
     
-   // walk = scene->createItemGroup(list);
+    // Ignore empty walks.
+    if (lfc==0) return;
     
-    // Draw all the triangles in the circulator.
     do 
     {
-        if (lfc==0) break;
-        walk << drawTriangle(lfc, *scene);
+        QGraphicsPolygonItem *tr = drawTriangle(lfc);
+        if (tr!=0)
+        {
+            walkItems  << tr;
+            scene->addItem(tr);
+        }
+        
         ++lfc;
     } while (lfc != done);   
 }
 
 /*****************************************************************************/
 
-void MainWindow::randomTriangulation(QGraphicsScene &scene)
+void MainWindow::randomTriangulation()
 {   
     // Generate a random pointset to triangulate.
     CGAL::Random_points_in_square_2<Point,Creator> g(400.);
@@ -242,7 +230,7 @@ void MainWindow::randomTriangulation(QGraphicsScene &scene)
     tgi->setVerticesPen(QPen(Qt::red, 10, Qt::SolidLine, 
                                           Qt::RoundCap, 
                                           Qt::RoundJoin ));
-    scene.addItem(tgi);
+    scene->addItem(tgi);
 
     
     view->fitInView(tgi->boundingRect(), Qt::KeepAspectRatio);  
