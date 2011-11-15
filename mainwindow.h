@@ -27,23 +27,29 @@ typedef CGAL::Creator_uniform_2<double,Point>            Creator;
 typedef CGAL::Qt::TriangulationGraphicsItem<Delaunay>    QTriangulationGraphics;
 
 
-
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
 
 public:
     MainWindow();
-    
-    void mousePressEvent(QMouseEvent *event);
+
+protected:
+    bool eventFilter(QObject *obj, QEvent *event);    
+
+private slots:
+    void newFile();    
 
 private:
+    void createMenus();
+    void createActions();    
     void drawTriangle(Face_handle f, QGraphicsScene &scene);
     void randomTriangulation(QGraphicsScene &scene);
     void straightWalk(Point p, Point q);
     
     
-    
+    QMenu*                fileMenu;
+    QAction*                newAct;        
     QGraphicsView*            view;
     QGraphicsScene*          scene;    
     Delaunay                    dt;

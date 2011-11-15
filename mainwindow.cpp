@@ -20,17 +20,52 @@
 
 /*****************************************************************************/
 
+
+void MainWindow::newFile()
+{
+    qDebug() << "Clicked ";
+}
+
+/*****************************************************************************/
+
 MainWindow::MainWindow()
 {
     // This is where we draw items to.
     scene = new QGraphicsScene();
     view  = new QGraphicsView(scene);
   
+  
+    scene->installEventFilter(this);
+    
+  
     // Define extend of the viewport.
-    view->setSceneRect(-500,-500,1000,1000);
+    view->setSceneRect(-400,-400,800,800);
+   
+    QWidget *widget = new QWidget;
+    setCentralWidget(widget);
+
+    QWidget *topFiller = new QWidget;
+    topFiller->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);    
+    
+    
+    QWidget *bottomFiller = new QWidget;
+    bottomFiller->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);    
         
-    // The central widget in the mainwindow is the graphics view.
-    setCentralWidget(view);  
+    QVBoxLayout *layout = new QVBoxLayout;
+    layout->setMargin(5);
+    layout->addWidget(topFiller);
+    layout->addWidget(view);
+    layout->addWidget(bottomFiller);
+    widget->setLayout(layout);    
+    
+    
+    //view->setCursor(Qt::CrossCursor);
+    
+    createActions();
+    createMenus();
+
+    QString message = tr("A context menu is available by right-clicking");
+    statusBar()->showMessage(message);    
 
     // Create and draw a random triangulation to the graphics view.
     randomTriangulation(*scene);
@@ -38,10 +73,36 @@ MainWindow::MainWindow()
 
 /*****************************************************************************/
 
-void MainWindow::mousePressEvent(QMouseEvent *event)
+bool MainWindow::eventFilter(QObject *obj, QEvent *event)
 {
-  qDebug() << "Mouse button clicked at position: "
-           << event->pos();
+    if (obj == scene) {
+        if (event->type() == QEvent::GraphicsSceneMouseRelease	) {
+            qDebug() << "Ate key press";
+            return true;
+        } else {
+            return false;
+        }
+    } else {
+        // pass the event on to the parent class
+        return QMainWindow::eventFilter(obj, event);
+    }
+}
+
+/*****************************************************************************/
+
+void MainWindow::createMenus()
+{
+    fileMenu = menuBar()->addMenu(tr("&File"));
+    fileMenu->addAction(newAct);
+}
+
+/*****************************************************************************/
+
+void MainWindow::createActions()
+{
+    newAct = new QAction(tr("&New"), this);
+    newAct->setStatusTip(tr("Create a new file"));
+    connect(newAct, SIGNAL(triggered()), this, SLOT(newFile()));
 }
 
 /*****************************************************************************/
@@ -90,7 +151,7 @@ void MainWindow::straightWalk(Point p, Point q)
 void MainWindow::randomTriangulation(QGraphicsScene &scene)
 {   
     // Generate a random pointset to triangulate.
-    CGAL::Random_points_in_square_2<Point,Creator> g(500.);
+    CGAL::Random_points_in_square_2<Point,Creator> g(400.);
     CGAL::copy_n( g, 100, std::back_inserter(dt) );
 
     // Create a triangulation and add to the scene
@@ -100,6 +161,8 @@ void MainWindow::randomTriangulation(QGraphicsScene &scene)
                                           Qt::RoundJoin ));
     scene.addItem(tgi);
 
+    
+    
     
     dt.locate(Point(100,200));
 
