@@ -44,7 +44,7 @@ private slots:
 private:
     void createMenus();
     void createActions();    
-    void drawTriangle(Face_handle f, QGraphicsScene &scene);
+    QGraphicsPolygonItem* drawTriangle(Face_handle f, QGraphicsScene &scene);
     void randomTriangulation(QGraphicsScene &scene);
     void straightWalk(Point p, Point q);
     
@@ -55,7 +55,9 @@ private:
     QGraphicsScene*          scene;    
     Delaunay                    dt;
     CGAL::Qt::Converter<K>       c;
-    
+    QTriangulationGraphics*    tgi; 
+    QList<QGraphicsPolygonItem*>      walk;
+     
     // When we are taking points as input we use the following.
     // if inputPoints < 0 we are not learning points.
     // if it is positive we are learning points[inputPoints]

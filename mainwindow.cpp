@@ -40,14 +40,26 @@ void MainWindow::newWalk()
 void MainWindow::updateScene()
 {
     qDebug() << "Updating scene";
+    
+
+    while (!walk.isEmpty())
+        scene->removeItem(walk.takeFirst());
+
+  //  scene->addItem(tgi);
+
+    if (inputPoints==1) 
+    {
+          straightWalk(c(points[0]), c(points[1]));    
+          qDebug() << "Drawing walk";
+    }
 }
 
 /*****************************************************************************/
 
 MainWindow::MainWindow()
 {
-    inputPoints = false;
-    
+    inputPoints = -1;
+
     // This is where we draw items to.
     scene = new QGraphicsScene();
     view  = new QGraphicsView(scene);
@@ -90,18 +102,23 @@ MainWindow::MainWindow()
 
     // Create and draw a random triangulation to the graphics view.
     randomTriangulation(*scene);
+    
+    
 }
 
 /*****************************************************************************/
 
 bool MainWindow::eventFilter(QObject *obj, QEvent *event)
 {
+    
+    qDebug() << "input points:" << inputPoints << endl;
     if (obj == scene)
     {
         switch(event->type())
         {
+            
             case QEvent::GraphicsSceneMouseRelease:
-            { 
+            {
                 QGraphicsSceneMouseEvent* mouseEvent = static_cast<QGraphicsSceneMouseEvent*>(event);
 
                 if (mouseEvent->button() == Qt::LeftButton)
@@ -111,30 +128,41 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event)
                     {
                         if (inputPoints==2) 
                         {
+                            view->setCursor(Qt::ArrowCursor);                         
                             straightWalk(c(points[0]), c(points[1]));
-                            inputPoints = 0;                            
+                            inputPoints = -1;                     
                         } else {
-                            points[inputPoints] = mouseEvent->scenePos();                        
+                            points[inputPoints] = mouseEvent->scenePos();       
+                            
                             inputPoints ++;
                         }                        
                     }
                     qDebug() << "Ate key press";
                 }
                 return true;
+                break;
             }
             
             case QEvent::GraphicsSceneMouseMove:
             {
+                QGraphicsSceneMouseEvent* mouseEvent = static_cast<QGraphicsSceneMouseEvent*>(event);
+                
+                points[1]           = mouseEvent->scenePos();
+                
                 qDebug() << "mouse move";
-                updateScene();            
+                if (inputPoints>=0)
+                    updateScene();            
+                return true;
+                break;
             }
             
             default:
-            {
                 // pass the event on to the parent class
                 return QMainWindow::eventFilter(obj, event);  
-            }
         }
+    } else {
+        // pass the event on to the parent class
+        return QMainWindow::eventFilter(obj, event);  
     }
 }
 
@@ -158,7 +186,7 @@ void MainWindow::createActions()
 /*****************************************************************************/
 
 // Use this to draw a triangle specified by a face.
-void MainWindow::drawTriangle(Face_handle f, QGraphicsScene &scene)
+QGraphicsPolygonItem* MainWindow::drawTriangle(Face_handle f, QGraphicsScene &scene)
 {
 
     // Ignore infinite faces.
@@ -177,6 +205,8 @@ void MainWindow::drawTriangle(Face_handle f, QGraphicsScene &scene)
         // The "look" of the triangle.
         polygonItem->setPen( QPen(Qt::darkGreen) );
         polygonItem->setBrush( Qt::yellow );    
+    
+        return polygonItem;
     }
 }
 
@@ -188,10 +218,13 @@ void MainWindow::straightWalk(Point p, Point q)
     // Create a circulator describing the walk.
     Line_face_circulator lfc = dt.line_walk (p,q), done(lfc);
     
+   // walk = scene->createItemGroup(list);
+    
     // Draw all the triangles in the circulator.
     do 
-    {    
-        drawTriangle(lfc, *scene);
+    {
+        if (lfc==0) break;
+        walk << drawTriangle(lfc, *scene);
         ++lfc;
     } while (lfc != done);   
 }
@@ -205,13 +238,14 @@ void MainWindow::randomTriangulation(QGraphicsScene &scene)
     CGAL::copy_n( g, 100, std::back_inserter(dt) );
 
     // Create a triangulation and add to the scene
-    QTriangulationGraphics *tgi = new QTriangulationGraphics(&dt);
+    tgi = new QTriangulationGraphics(&dt);
     tgi->setVerticesPen(QPen(Qt::red, 10, Qt::SolidLine, 
                                           Qt::RoundCap, 
                                           Qt::RoundJoin ));
     scene.addItem(tgi);
 
     
+    view->fitInView(tgi->boundingRect(), Qt::KeepAspectRatio);  
     
     
     dt.locate(Point(100,200));
