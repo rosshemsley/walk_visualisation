@@ -48,6 +48,7 @@ public:
 
 protected:
     bool                            eventFilter(QObject *obj, QEvent *event);    
+    void                            resizeEvent (QResizeEvent * event);
 
 private slots:
     void                            newWalk();    

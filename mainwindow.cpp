@@ -85,6 +85,9 @@ MainWindow::MainWindow()
     // Define extent of the viewport.
     view->setSceneRect(-400,-400,800,800);
    
+    view->setRenderHint(QPainter::Antialiasing);
+   
+   
     // Container widget for the layout.
     QWidget *widget = new QWidget;
     setCentralWidget(widget);
@@ -98,9 +101,9 @@ MainWindow::MainWindow()
         
     QVBoxLayout *layout = new QVBoxLayout;
     layout->setMargin(5);
-    layout->addWidget(topFiller);
+   // layout->addWidget(topFiller);
     layout->addWidget(view);
-    layout->addWidget(bottomFiller);
+//    layout->addWidget(bottomFiller);
     widget->setLayout(layout);    
         
     createActions();
@@ -111,6 +114,13 @@ MainWindow::MainWindow()
 
     // Create and draw a random triangulation to the graphics view.
     randomTriangulation();    
+}
+
+/*****************************************************************************/
+
+void MainWindow::resizeEvent (QResizeEvent * event)
+{    
+    view->fitInView(tgi->boundingRect(), Qt::KeepAspectRatio);    
 }
 
 /*****************************************************************************/
