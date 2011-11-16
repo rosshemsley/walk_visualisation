@@ -57,16 +57,13 @@ private slots:
 private:
     void                            createMenus();
     void                            createActions();    
-    QGraphicsPolygonItem*           drawTriangle(Face_handle f);
-    void                            randomTriangulation();
-    void                            straightWalk(Point p, Point q);
-    
+    void                            randomTriangulation();    
     
     QMenu*                          fileMenu;
     QAction*                        newAct;        
     QGraphicsView*                  view;
     QGraphicsScene*                 scene;    
-    Delaunay                        dt;
+    Delaunay*                       dt;
     CGAL::Qt::Converter<K>          c;
     QTriangulationGraphics*         tgi; 
     QList<QGraphicsItem*>           walkItems;
@@ -75,7 +72,7 @@ private:
     // if inputPoints < 0 we are not learning points..
     // if it is positive we are learning points[inputPoints]
     int                             inputPoints;
-    QPointF                         points[2];
+    QPoint                          points[2];
 
 }; 
 

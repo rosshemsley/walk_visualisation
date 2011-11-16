@@ -30,8 +30,8 @@ if ( CGAL_FOUND AND CGAL_Qt4_FOUND AND QT4_FOUND )
   include(${QT_USE_FILE})
 
 
-	SET(walk_visualisation_SOURCES main.cpp mainwindow.cpp)
-	SET(walk_visualisation_HEADERS mainwindow.h)
+	SET(walk_visualisation_SOURCES main.cpp mainwindow.cpp walk.cpp)
+	SET(walk_visualisation_HEADERS mainwindow.h walk.h)
 
 	QT4_WRAP_CPP(walk_visualisation_HEADERS_MOC ${walk_visualisation_HEADERS})
 

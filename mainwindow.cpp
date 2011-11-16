@@ -22,6 +22,8 @@
 #include <CGAL/point_generators_2.h>
 
 #include "mainwindow.h"
+#include "walk.h"
+
 
 /*****************************************************************************/
 
@@ -51,14 +53,24 @@ void MainWindow::updateScene()
     while (! walkItems.isEmpty() )
         scene->removeItem(walkItems.takeFirst());
 
+
+    
+
     // If we have enough data to plot a walk, then do so.
     if (inputPoints > 0) 
-        straightWalk(c(points[0]), c(points[1]));    
+    {
+        StraightWalk<Delaunay> w(points[0], points[1], dt);
+        QGraphicsItem* walkGraphics = w.getGraphics();
+        
+        walkItems.append(walkGraphics);
+        scene->addItem(walkGraphics);
+        
+    }
 
     // Draw the walk end points.
     for (int i=0; i<inputPoints; i++)
     {        
-        QPoint p = points[i].toPoint();
+        QPoint p = points[i];
         walkItems.append(scene->addEllipse(QRect(p, QSize(10,10)),pen,brush));
     }
 }
@@ -67,6 +79,9 @@ void MainWindow::updateScene()
 
 MainWindow::MainWindow()
 {
+    
+    dt=new Delaunay();
+    
     // The default state is to not take new input points.
     inputPoints = -1;
 
@@ -138,7 +153,7 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event)
             case QEvent::GraphicsSceneMouseRelease:
             {
                 mouseEvent   = static_cast<QGraphicsSceneMouseEvent*>(event);
-                QPointF pos = mouseEvent->scenePos();
+                QPoint pos = mouseEvent->scenePos().toPoint();
 
                 if (mouseEvent->button() == Qt::LeftButton)
                 {
@@ -162,7 +177,7 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event)
                 if (inputPoints == 1)
                 {
                     mouseEvent = static_cast<QGraphicsSceneMouseEvent*>(event);            
-                    points[1] = mouseEvent->scenePos();
+                    points[1] = mouseEvent->scenePos().toPoint();
                     updateScene();            
                 }
                 return true;
@@ -193,67 +208,15 @@ void MainWindow::createActions()
 
 /*****************************************************************************/
 
-// Use this to draw a triangle specified by a face.
-QGraphicsPolygonItem* MainWindow::drawTriangle(Face_handle f)
-{
-    
-    // Ignore infinite faces.
-    if (! dt.is_infinite( f ) ) 
-    {
-        // Convert a face into a polygon for plotting.
-        QGraphicsPolygonItem *polygonItem;
-        QVector<QPointF>      polygon;    
-            
-        polygon << c(f->vertex(0)->point()) 
-                << c(f->vertex(1)->point()) 
-                << c(f->vertex(2)->point());
-                
-        polygonItem = new QGraphicsPolygonItem(QPolygonF(polygon));
-    
-        // The "look" of the triangle.
-        polygonItem->setPen( QPen(Qt::darkGreen) );
-        polygonItem->setBrush( QColor("#D2CAEB") );    
-    
-        return polygonItem;
-    }
-    
-    return 0;
-}
-
-/*****************************************************************************/
-
-// Do a straight walk between points p and q, and then draw the result.
-void MainWindow::straightWalk(Point p, Point q)
-{
-    // Create a circulator describing the walk.
-    Line_face_circulator lfc = dt.line_walk (p,q), done(lfc);
-    
-    // Ignore empty walks.
-    if (lfc==0) return;
-    
-    do 
-    {
-        QGraphicsPolygonItem *tr = drawTriangle(lfc);
-        if (tr!=0)
-        {
-            walkItems  << tr;
-            scene->addItem(tr);
-        }
-        
-        ++lfc;
-    } while (lfc != done);   
-}
-
-/*****************************************************************************/
-
 void MainWindow::randomTriangulation()
 {   
+
     // Generate a random pointset to triangulate.
     CGAL::Random_points_in_square_2<Point,Creator> g(400.);
-    CGAL::copy_n( g, 100, std::back_inserter(dt) );
+    CGAL::copy_n( g, 100, std::back_inserter(*dt) );
 
     // Create a triangulation and add to the scene
-    tgi = new QTriangulationGraphics(&dt);
+    tgi = new QTriangulationGraphics(dt);
     tgi->setVerticesPen(QPen(Qt::red, 5 , Qt::SolidLine, 
                                           Qt::RoundCap, 
                                           Qt::RoundJoin ));
@@ -262,7 +225,6 @@ void MainWindow::randomTriangulation()
     view->setSceneRect(tgi->boundingRect());
     view->fitInView(tgi->boundingRect(), Qt::KeepAspectRatio);
     
-    dt.locate(Point(100,200));
 }
 
 /*****************************************************************************/
