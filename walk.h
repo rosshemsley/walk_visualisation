@@ -22,7 +22,6 @@
 #include <CGAL/point_generators_2.h>
 #include <boost/format.hpp>
 
-
 #include <QList>
 
 /*****************************************************************************/

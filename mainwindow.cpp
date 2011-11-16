@@ -36,6 +36,10 @@ void MainWindow::newWalk()
     // Set the mouse to a crosshair when moving over the grahpics view.
     view->setCursor(Qt::CrossCursor);   
     
+    // Small trick to stop any faces being displayed before any mouse over events
+    // occur.
+    points[0] = QPoint(-1000,-1000);
+    
     // Clear any old walk graphics from the scene.
     updateScene();    
 }
