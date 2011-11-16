@@ -21,6 +21,9 @@
 #include <CGAL/Qt/TriangulationGraphicsItem.h>
 #include <CGAL/point_generators_2.h>
 
+#include <QList>
+
+
 /*****************************************************************************/
 
 
@@ -31,17 +34,22 @@
 template <typename T>
 class Walk
 {
-    typedef typename T::Face                                         Face;
-    typedef typename T::Face::Face_handle                            Face_handle;
-    typedef typename T::Line_face_circulator                         Line_face_circulator;
-    typedef typename T::Geom_traits                                  Gt;
-    
+    typedef typename T::Face                            Face;
+    typedef typename T::Face_handle                     Face_handle;
+    typedef typename T::Line_face_circulator            Lfc;
+    typedef typename T::Geom_traits                     Gt;
     
 public:
-    virtual QGraphicsItem*          getGraphics()=0;    
+    // Create a graphics item for drawing this triangulation.
+    QGraphicsItem*                  getGraphics();    
     
 protected:
+    // Pointer to the triangluation this walk is on.
     T*                              dt;
+    // List of faces this walk intersects.
+    QList<Face_handle>             faces;
+    
+    // Helper function to draw triangles.
     QGraphicsPolygonItem*           drawTriangle(Face_handle f);
 };
 
@@ -52,18 +60,13 @@ protected:
 template <typename T>
 class StraightWalk : public Walk<T> 
 {
-    typedef typename T::Face                                         Face;
-    typedef typename T::Face::Face_handle                            Face_handle;
-    typedef typename T::Line_face_circulator                         Line_face_circulator;
-    typedef typename T::Geom_traits                                  Gt;
+    typedef typename T::Face                            Face;
+    typedef typename T::Face_handle                     Face_handle;
+    typedef typename T::Line_face_circulator            Lfc;
+    typedef typename T::Geom_traits                     Gt;
     
 public:    
-                                    StraightWalk(QPoint p, QPoint q, T* dt);
-    QGraphicsItem*                  getGraphics();
-    
-private:
-    Line_face_circulator            lfc;
-    
+                                    StraightWalk(QPoint p, QPoint q, T* dt);        
 };
 
 /******************************************************************************
@@ -73,61 +76,13 @@ private:
 template <typename T>
 class VisibillityWalk : public Walk<T>
 {
-    typedef typename T::Face                                         Face;
-    typedef typename T::Face::Face_handle                            Face_handle;
-    typedef typename T::Line_face_circulator                         Line_face_circulator;
-    typedef typename T::Geom_traits                                  Gt;
+    typedef typename T::Face                            Face;
+    typedef typename T::Face_handle                     Face_handle;
+    typedef typename T::Geom_traits                     Gt;
+    
 public:    
                                     VisibillityWalk(QPoint q, QPoint q, T* dt);
-    QGraphicsItem*                  getGraphics();
 };
-
-
-/*****************************************************************************/  
-
-#include "walk.h"
-
-/******************************************************************************
-* Straight Walk
-******************************************************************************/  
-  
-template <typename T>
-StraightWalk<T>::StraightWalk(QPoint p, QPoint q, T *dt)
-{
-  this->dt = dt;
-  // Create a circulator describing the walk.
-  CGAL::Qt::Converter<Gt>         c;
- 
-  lfc = dt->line_walk (c(p),c(q));      
-}
-
-/*****************************************************************************/  
-  
-template <typename T>  
-QGraphicsItem* StraightWalk<T>::getGraphics()
-{
-    QGraphicsItemGroup* g = new QGraphicsItemGroup();
-
-    Line_face_circulator done(lfc);
-
-    // Ignore empty walks.
-    if (lfc==0) return 0;
-
-    do 
-    {
-        // Draw this triangle in the walk.
-        QGraphicsPolygonItem *tr = drawTriangle(lfc); 
-
-        // If the triangle is non-empty, add it to the graphics item.
-        if (tr!=0)
-            g->addToGroup(tr);
-
-        ++lfc;
-    } while (lfc != done);        
-
-    return g;
-}   
-
 /*****************************************************************************/  
 
 
@@ -140,40 +95,85 @@ QGraphicsItem* StraightWalk<T>::getGraphics()
 
 
 
+/******************************************************************************
+* Straight Walk
+******************************************************************************/  
+  
+// Perform a straight walk, storing triangles visited in base class.
+template <typename T>
+StraightWalk<T>::StraightWalk(QPoint p, QPoint q, T *dt)
+{
+    // Store a reference to the triangulation.
+    this->dt = dt;
+    
+    // Create a circulator describing the walk.
+    CGAL::Qt::Converter<Gt>         c;
+ 
+    // Use CGAL built-in line walk.
+    Lfc lfc = dt->line_walk (c(p),c(q)), done(lfc);     
+  
+    // Take all the items from the circulator and add them to a list.
+    if (lfc == 0) return;
+    
+    do {
+        Face_handle f = lfc;
+        this->faces.append(f);        
+    } while (++lfc != done);          
+}
 
 /******************************************************************************
 * Visibility Walk
 ******************************************************************************/
 
+// Perform a visibility walk, storing triangles visited in base class.
 template <typename T>
 VisibillityWalk<T>::VisibillityWalk(QPoint x, QPoint y, T* dt)
 {
     
 } 
 
-/*****************************************************************************/
-
-template <typename T>
-QGraphicsItem* VisibillityWalk<T>::getGraphics()
-{
-    
-}
-
 /******************************************************************************
-* Walk functions
+* Walk base-class functions
 ******************************************************************************/
 
+// Create a graphics item representing this walk.
+template <typename T>  
+QGraphicsItem* Walk<T>::getGraphics()
+{
+    // This GraphicsItem Group will store the triangles from the walk.
+    QGraphicsItemGroup* g = new QGraphicsItemGroup();
+    
+    // Iterate over faces in this walk.
+    typename QList<typename T::Face_handle>::const_iterator i;
+    for (i = faces.begin(); i != faces.end(); ++i)
+    {
+        // Draw this triangle in the walk.
+        QGraphicsPolygonItem *tr = drawTriangle(*i); 
+
+        // If the triangle is non-empty, add it to the graphics item.
+        if (tr!=0)
+            g->addToGroup(tr);        
+    }
+
+    return g;
+}
+
+/*****************************************************************************/  
+
+// Helper-function to create a triangle graphics item.
 template <typename T>
 QGraphicsPolygonItem* Walk<T>::drawTriangle(Face_handle f)
 {
-    CGAL::Qt::Converter<Gt>         c;
+    // Helper to convert between different point types.
+    CGAL::Qt::Converter<Gt> c;
 
+    // We store this triangle as a polygonItem.
+    QGraphicsPolygonItem *polygonItem = 0;
 
     // Ignore infinite faces.
     if (! dt->is_infinite( f ) ) 
     {
         // Convert a face into a polygon for plotting.
-        QGraphicsPolygonItem *polygonItem;
         QVector<QPointF>      polygon;    
 
         polygon << c(f->vertex(0)->point()) 
@@ -184,12 +184,10 @@ QGraphicsPolygonItem* Walk<T>::drawTriangle(Face_handle f)
 
         // The "look" of the triangle.
         polygonItem->setPen( QPen(Qt::darkGreen) );
-        polygonItem->setBrush( QColor("#D2D2EB") );    
-
-        return polygonItem;
+        polygonItem->setBrush( QColor("#D2D2EB") );            
     }
-
-    return 0;
+    
+    return polygonItem;
 }
 
 /*****************************************************************************/
