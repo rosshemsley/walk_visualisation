@@ -52,18 +52,19 @@ void MainWindow::updateScene()
     // drawn as part of the walk.
     while (! walkItems.isEmpty() )
         scene->removeItem(walkItems.takeFirst());
-
-
-    
-
+        
     // If we have enough data to plot a walk, then do so.
     if (inputPoints > 0) 
     {
-        StraightWalk<Delaunay> w(c(points[1]), dt);
-        QGraphicsItem* walkGraphics = w.getGraphics();
+        Face_handle f = dt->locate(c(points[0]));
+        if (!dt->is_infinite(f))
+        {        
+            StraightWalk<Delaunay> w(c(points[1]), dt, f);
+            QGraphicsItem* walkGraphics = w.getGraphics();
         
-        walkItems.append(walkGraphics);
-        scene->addItem(walkGraphics);        
+            walkItems.append(walkGraphics);
+            scene->addItem(walkGraphics);        
+        }
     }
 
     if (inputPoints == 0)
