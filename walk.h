@@ -1,6 +1,11 @@
 /******************************************************************************
 * Written by Ross Hemsley for INRIA.fr. 
-* A simple application visualise different walks on Delaunay Triangulations.
+* This is a class heirachy to perform different walks on triangulations,
+* providing methods to create a QGraphicsItem so that they can be drawn
+* directly to a QGraphicsScene.
+*
+* We also consider the number of triangles and properties of each walk.
+*
 ******************************************************************************/
 
 #ifndef WALK_H
@@ -19,13 +24,11 @@
 /*****************************************************************************/
 
 
-template <typename T>
-
-
 /******************************************************************************
 * Abstract class to contain different walking strategies
 ******************************************************************************/
 
+template <typename T>
 class Walk
 {
     typedef typename T::Face                                         Face;
@@ -45,8 +48,8 @@ protected:
 /******************************************************************************
 * Straight walk strategy
 ******************************************************************************/
-template <typename T>
 
+template <typename T>
 class StraightWalk : public Walk<T> 
 {
     typedef typename T::Face                                         Face;
@@ -66,8 +69,8 @@ private:
 /******************************************************************************
 * Visibility walk strategy
 ******************************************************************************/
-template <typename T>
 
+template <typename T>
 class VisibillityWalk : public Walk<T>
 {
     typedef typename T::Face                                         Face;
@@ -125,6 +128,19 @@ QGraphicsItem* StraightWalk<T>::getGraphics()
     return g;
 }   
 
+/*****************************************************************************/  
+
+
+
+/******************************************************************************
+*
+* Implementations
+*
+******************************************************************************/
+
+
+
+
 /******************************************************************************
 * Visibility Walk
 ******************************************************************************/
@@ -175,21 +191,6 @@ QGraphicsPolygonItem* Walk<T>::drawTriangle(Face_handle f)
 
     return 0;
 }
-
-/*****************************************************************************/
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 /*****************************************************************************/
 
