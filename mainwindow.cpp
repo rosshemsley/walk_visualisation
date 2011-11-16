@@ -59,7 +59,7 @@ void MainWindow::updateScene()
     // If we have enough data to plot a walk, then do so.
     if (inputPoints > 0) 
     {
-        StraightWalk<Delaunay> w(points[0], points[1], dt);
+        StraightWalk<Delaunay> w(c(points[1]), dt);
         QGraphicsItem* walkGraphics = w.getGraphics();
         
         walkItems.append(walkGraphics);

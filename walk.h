@@ -20,12 +20,12 @@
 #include <CGAL/Delaunay_triangulation_2.h>
 #include <CGAL/Qt/TriangulationGraphicsItem.h>
 #include <CGAL/point_generators_2.h>
+#include <boost/format.hpp>
+
 
 #include <QList>
 
-
 /*****************************************************************************/
-
 
 /******************************************************************************
 * Abstract class to contain different walking strategies
@@ -42,12 +42,13 @@ class Walk
 public:
     // Create a graphics item for drawing this triangulation.
     QGraphicsItem*                  getGraphics();    
+    int                             getNumTrianglesVisited();
     
 protected:
     // Pointer to the triangluation this walk is on.
     T*                              dt;
     // List of faces this walk intersects.
-    QList<Face_handle>             faces;
+    QList<Face_handle>              faces;
     
     // Helper function to draw triangles.
     QGraphicsPolygonItem*           drawTriangle(Face_handle f);
@@ -61,12 +62,13 @@ template <typename T>
 class StraightWalk : public Walk<T> 
 {
     typedef typename T::Face                            Face;
+    typedef typename T::Point                           Point;    
     typedef typename T::Face_handle                     Face_handle;
     typedef typename T::Line_face_circulator            Lfc;
     typedef typename T::Geom_traits                     Gt;
     
 public:    
-                                    StraightWalk(QPoint p, QPoint q, T* dt);        
+    StraightWalk(Point p, T* dt, Face_handle f=Face_handle());  
 };
 
 /******************************************************************************
@@ -77,11 +79,12 @@ template <typename T>
 class VisibillityWalk : public Walk<T>
 {
     typedef typename T::Face                            Face;
+    typedef typename T::Point                           Point;    
     typedef typename T::Face_handle                     Face_handle;
     typedef typename T::Geom_traits                     Gt;
     
 public:    
-                                    VisibillityWalk(QPoint q, QPoint q, T* dt);
+    VisibillityWalk(Point p, T* dt, Face_handle f=Face_handle());
 };
 /*****************************************************************************/  
 
@@ -101,16 +104,21 @@ public:
   
 // Perform a straight walk, storing triangles visited in base class.
 template <typename T>
-StraightWalk<T>::StraightWalk(QPoint p, QPoint q, T *dt)
+StraightWalk<T>::StraightWalk(Point p, T* dt, Face_handle f)
 {
     // Store a reference to the triangulation.
     this->dt = dt;
-    
+        
     // Create a circulator describing the walk.
     CGAL::Qt::Converter<Gt>         c;
  
+    if (f==Face_handle())
+        f= dt->infinite_face();
+ 
+    Point x = f->vertex(0)->point();
+    
     // Use CGAL built-in line walk.
-    Lfc lfc = dt->line_walk (c(p),c(q)), done(lfc);     
+    Lfc lfc = dt->line_walk (x,p), done(lfc);     
   
     // Take all the items from the circulator and add them to a list.
     if (lfc == 0) return;
@@ -127,14 +135,44 @@ StraightWalk<T>::StraightWalk(QPoint p, QPoint q, T *dt)
 
 // Perform a visibility walk, storing triangles visited in base class.
 template <typename T>
-VisibillityWalk<T>::VisibillityWalk(QPoint x, QPoint y, T* dt)
+VisibillityWalk<T>::VisibillityWalk(Point p, T* dt, Face_handle f)
 {
+    // Create a binary random number generator.
+    boost::rand48 rng;
+    boost::uniform_smallint<> two(0, 1);
+    boost::variate_generator<boost::rand48&, boost::uniform_smallint<> > coin(rng, two);    
+    
+
+    while(1)
+    {
+        int left_first = coin()%2;
+/*
+        const Point & p0 = c->vertex( 0 )->point();
+        const Point & p1 = c->vertex( 1 )->point();
+        const Point & p2 = c->vertex( 2 )->point();
+        
+  */      
+    }
+
     
 } 
 
 /******************************************************************************
 * Walk base-class functions
+*
+* These provide basic functionality that is common to all of the walk types
+* so that we do not have to re-implement this functionality multiple times.
+*
 ******************************************************************************/
+
+// Return the number of faces visited in this walk.
+template <typename T>  
+int Walk<T>::getNumTrianglesVisited()
+{
+    return faces.size();
+}
+
+/*****************************************************************************/  
 
 // Create a graphics item representing this walk.
 template <typename T>  
