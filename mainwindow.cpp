@@ -63,16 +63,29 @@ void MainWindow::updateScene()
         QGraphicsItem* walkGraphics = w.getGraphics();
         
         walkItems.append(walkGraphics);
-        scene->addItem(walkGraphics);
-        
+        scene->addItem(walkGraphics);        
     }
 
-    // Draw the walk end points.
-    for (int i=0; i<inputPoints; i++)
-    {        
-        QPoint p = points[i];
-        walkItems.append(scene->addEllipse(QRect(p, QSize(10,10)),pen,brush));
+    if (inputPoints == 0)
+    {
+        // Find the face we are hovering over.
+        Face_handle f = dt->locate(c(points[0]));
+        
+        // Check the face is finite, and then draw it.
+        if (!dt->is_infinite(f))
+        {        
+            QGraphicsItem *tr = Walk<Delaunay>::drawTriangle(f);
+            scene->addItem(tr);
+            walkItems.append(tr);
+        }        
     }
+    
+    if (inputPoints >= 1)
+    {
+        QPoint p = points[1];
+        walkItems.append(scene->addEllipse(QRect(p, QSize(10,10)),pen,brush));        
+    }
+
 }
 
 /*****************************************************************************/
@@ -174,10 +187,19 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event)
             // ** MOUSE MOVED ** //            
             case QEvent::GraphicsSceneMouseMove:
             {
+                mouseEvent = static_cast<QGraphicsSceneMouseEvent*>(event);                            
+                QPoint pos = mouseEvent->scenePos().toPoint();
+                
+                if (inputPoints == 0)
+                 {
+
+                     points[0] = pos;
+                     updateScene();
+                 }
+                
                 if (inputPoints == 1)
                 {
-                    mouseEvent = static_cast<QGraphicsSceneMouseEvent*>(event);            
-                    points[1] = mouseEvent->scenePos().toPoint();
+                    points[1] = pos;
                     updateScene();            
                 }
                 return true;

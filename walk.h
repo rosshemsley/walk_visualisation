@@ -43,6 +43,9 @@ public:
     // Create a graphics item for drawing this triangulation.
     QGraphicsItem*                  getGraphics();    
     int                             getNumTrianglesVisited();
+
+    
+    static QGraphicsPolygonItem*    drawTriangle(Face_handle f);
     
 protected:
     // Pointer to the triangluation this walk is on.
@@ -51,7 +54,6 @@ protected:
     QList<Face_handle>              faces;
     
     // Helper function to draw triangles.
-    QGraphicsPolygonItem*           drawTriangle(Face_handle f);
 };
 
 /******************************************************************************
@@ -110,10 +112,10 @@ StraightWalk<T>::StraightWalk(Point p, T* dt, Face_handle f)
     this->dt = dt;
         
     // Create a circulator describing the walk.
-    CGAL::Qt::Converter<Gt>         c;
+    CGAL::Qt::Converter<Gt> c;
  
     if (f==Face_handle())
-        f= dt->infinite_face();
+        f=dt->infinite_face();
  
     Point x = f->vertex(0)->point();
     
@@ -186,11 +188,11 @@ QGraphicsItem* Walk<T>::getGraphics()
     for (i = faces.begin(); i != faces.end(); ++i)
     {
         // Draw this triangle in the walk.
-        QGraphicsPolygonItem *tr = drawTriangle(*i); 
-
-        // If the triangle is non-empty, add it to the graphics item.
-        if (tr!=0)
+        if (! dt->is_infinite( *i ) ) 
+        {
+            QGraphicsPolygonItem *tr = drawTriangle(*i);         
             g->addToGroup(tr);        
+        }
     }
 
     return g;
@@ -208,22 +210,20 @@ QGraphicsPolygonItem* Walk<T>::drawTriangle(Face_handle f)
     // We store this triangle as a polygonItem.
     QGraphicsPolygonItem *polygonItem = 0;
 
-    // Ignore infinite faces.
-    if (! dt->is_infinite( f ) ) 
-    {
-        // Convert a face into a polygon for plotting.
-        QVector<QPointF>      polygon;    
 
-        polygon << c(f->vertex(0)->point()) 
-                << c(f->vertex(1)->point()) 
-                << c(f->vertex(2)->point());
+    // Convert a face into a polygon for plotting.
+    QVector<QPointF>      polygon;    
 
-        polygonItem = new QGraphicsPolygonItem(QPolygonF(polygon));
+    polygon << c(f->vertex(0)->point()) 
+            << c(f->vertex(1)->point()) 
+            << c(f->vertex(2)->point());
 
-        // The "look" of the triangle.
-        polygonItem->setPen( QPen(Qt::darkGreen) );
-        polygonItem->setBrush( QColor("#D2D2EB") );            
-    }
+    polygonItem = new QGraphicsPolygonItem(QPolygonF(polygon));
+
+    // The "look" of the triangle.
+    polygonItem->setPen( QPen(Qt::darkGreen) );
+    polygonItem->setBrush( QColor("#D2D2EB") );            
+
     
     return polygonItem;
 }
