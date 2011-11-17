@@ -124,12 +124,13 @@ StraightWalk<T>::StraightWalk(Point p, T* dt, Face_handle f)
     Lfc lfc = dt->line_walk (x,p), done(lfc);     
   
     // Take all the items from the circulator and add them to a list.
-    if (lfc == 0) return;
-    
-    do {
-        Face_handle f = lfc;
-        addToWalk(f);        
-    } while (++lfc != done);          
+    if (lfc != 0)
+    {    
+        do {
+            Face_handle f = lfc;
+            addToWalk(f);        
+        } while (++lfc != done);          
+    }
 }
 
 /******************************************************************************
@@ -141,12 +142,16 @@ template <typename T>
 VisibilityWalk<T>::VisibilityWalk(Point p, T* dt, Face_handle f)
 {
     
+    this->dt = dt;
+    
     // The user did not provide a face handle. So just use the infinite face.
     if (f==Face_handle())
         f=dt->infinite_face();
         
     // This is where we store the current face.
     Face_handle c = f;    
+    
+    addToWalk(c);
     
     // Create a binary random number generator.
     boost::rand48 rng;
@@ -226,18 +231,27 @@ int Walk<T>::getNumTrianglesVisited()
 template <typename T>  
 QGraphicsItem* Walk<T>::getGraphics()
 {
+    
+    qDebug() << "Getting graphics";
     // This GraphicsItem Group will store the triangles from the walk.
     QGraphicsItemGroup* g = new QGraphicsItemGroup();
+    
+    qDebug() << faces.size();
     
     // Iterate over faces in this walk.
     typename QList<typename T::Face_handle>::const_iterator i;
     for (i = faces.begin(); i != faces.end(); ++i)
     {
+        qDebug() << "looping faces";
         // Draw this triangle in the walk.
-        if (! dt->is_infinite( *i ) ) 
+        if (*i !=0)
         {
-            QGraphicsPolygonItem *tr = drawTriangle(*i);         
-            g->addToGroup(tr);        
+            if (! dt->is_infinite( *i ) ) 
+            {
+            //    std::cout << (*i)->vertex(0)->point() << " " << (*i)->vertex(1)->point() << " " << (*i)->vertex(2)->point();
+                QGraphicsPolygonItem *tr = drawTriangle(*i);         
+               g->addToGroup(tr);        
+            }
         }
     }
 

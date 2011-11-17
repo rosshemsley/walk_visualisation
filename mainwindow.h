@@ -53,12 +53,16 @@ protected:
 private slots:
     void                            newWalk();    
     void                            updateScene();
+    void                            straightWalk_checkbox_change(int state);
+    void                            visibilityWalk_checkbox_change(int state);
 
 private:
     void                            createMenus();
     void                            createActions();    
     void                            randomTriangulation();    
-    
+
+    bool                            drawStraightWalk;
+    bool                            drawVisibilityWalk;
     QMenu*                          fileMenu;
     QAction*                        newAct;        
     QGraphicsView*                  view;

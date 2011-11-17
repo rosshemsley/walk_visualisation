@@ -46,8 +46,27 @@ void MainWindow::newWalk()
 
 /*****************************************************************************/
 
+void MainWindow::straightWalk_checkbox_change(int state)
+{
+    drawStraightWalk = state;
+    updateScene();
+}
+
+/*****************************************************************************/
+
+void MainWindow::visibilityWalk_checkbox_change(int state)
+{
+    drawVisibilityWalk = state;    
+    updateScene();
+}
+
+/*****************************************************************************/
+
 void MainWindow::updateScene()
 {
+    qDebug() << inputPoints;
+    qDebug() << points[0] << ", " << points[1];
+    
     // Style for points.
     QPen   pen(Qt::blue);
     QBrush brush(Qt::blue);
@@ -61,13 +80,32 @@ void MainWindow::updateScene()
     if (inputPoints > 0) 
     {
         Face_handle f = dt->locate(c(points[0]));
-        if (!dt->is_infinite(f))
-        {        
-            VisibilityWalk<Delaunay> w(c(points[1]), dt, f);
-            QGraphicsItem* walkGraphics = w.getGraphics();
-        
-            walkItems.append(walkGraphics);
-            scene->addItem(walkGraphics);        
+        if (f != 0)
+        {
+            if (!dt->is_infinite(f))
+            {        
+            
+                if (drawStraightWalk)
+                {
+                    StraightWalk<Delaunay> w(c(points[1]), dt, f);
+                    QGraphicsItem* walkGraphics = w.getGraphics();
+                    walkItems.append(walkGraphics);
+                    scene->addItem(walkGraphics);  
+                                                      
+                }
+            
+                if (drawVisibilityWalk)
+                {
+                    qDebug() << "Drawing vis walk";
+                    VisibilityWalk<Delaunay> w(c(points[1]), dt, f);
+                    QGraphicsItem* walkGraphics = w.getGraphics();
+                    walkItems.append(walkGraphics);
+                    scene->addItem(walkGraphics);                
+                }
+            
+            
+            }
+     
         }
     }
 
@@ -76,12 +114,16 @@ void MainWindow::updateScene()
         // Find the face we are hovering over.
         Face_handle f = dt->locate(c(points[0]));
         
-        // Check the face is finite, and then draw it.
-        if (!dt->is_infinite(f))
-        {        
-            QGraphicsItem *tr = Walk<Delaunay>::drawTriangle(f);
-            scene->addItem(tr);
-            walkItems.append(tr);
+        if (f!=0)
+        {
+        
+            // Check the face is finite, and then draw it.
+            if (!dt->is_infinite(f))
+            {        
+                QGraphicsItem *tr = Walk<Delaunay>::drawTriangle(f);
+                scene->addItem(tr);
+                walkItems.append(tr);
+            }
         }        
     }
     
@@ -120,6 +162,21 @@ MainWindow::MainWindow()
    
     view->setRenderHint(QPainter::Antialiasing);
    
+    QGroupBox *groupBox = new QGroupBox(tr("Walk Types"));
+    QCheckBox *checkBox_visibility = new QCheckBox(tr("Visibility Walk"));
+    QCheckBox *checkBox_straight   = new QCheckBox(tr("Straight Walk"));
+
+    QVBoxLayout *vbox = new QVBoxLayout;
+    vbox->addWidget(checkBox_visibility);
+    vbox->addWidget(checkBox_straight);
+    groupBox->setLayout(vbox);
+
+    connect(checkBox_straight,   SIGNAL(stateChanged(int)), this, SLOT(straightWalk_checkbox_change(int)));
+    connect(checkBox_visibility, SIGNAL(stateChanged(int)), this, SLOT(visibilityWalk_checkbox_change(int)));
+   
+   
+    drawStraightWalk   = FALSE;
+    drawVisibilityWalk = FALSE;
    
     // Container widget for the layout.
     QWidget *widget = new QWidget;
@@ -134,7 +191,7 @@ MainWindow::MainWindow()
         
     QVBoxLayout *layout = new QVBoxLayout;
     layout->setMargin(5);
-   // layout->addWidget(topFiller);
+   layout->addWidget(groupBox);
     layout->addWidget(view);
 //    layout->addWidget(bottomFiller);
     widget->setLayout(layout);    
@@ -208,7 +265,10 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event)
                     updateScene();            
                 }
                 return true;
-            }            
+            }
+            
+            default:
+                return QMainWindow::eventFilter(obj, event);
         }
     }
     

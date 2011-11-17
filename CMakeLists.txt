@@ -18,6 +18,7 @@ find_package(CGAL COMPONENTS Qt4)
 include(${CGAL_USE_FILE})
 
 
+
 set( QT_USE_QTXML    TRUE )
 set( QT_USE_QTMAIN   TRUE )
 set( QT_USE_QTSCRIPT  TRUE )
@@ -44,6 +45,7 @@ if ( CGAL_FOUND AND CGAL_Qt4_FOUND AND QT4_FOUND )
 	
 	
   
+	#set(CMAKE_CXX_FLAGS "-g -Wall")
 
 
 else()
