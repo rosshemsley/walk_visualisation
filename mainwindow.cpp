@@ -63,7 +63,7 @@ void MainWindow::updateScene()
         Face_handle f = dt->locate(c(points[0]));
         if (!dt->is_infinite(f))
         {        
-            StraightWalk<Delaunay> w(c(points[1]), dt, f);
+            VisibilityWalk<Delaunay> w(c(points[1]), dt, f);
             QGraphicsItem* walkGraphics = w.getGraphics();
         
             walkItems.append(walkGraphics);

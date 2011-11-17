@@ -42,8 +42,8 @@ public:
     // Create a graphics item for drawing this triangulation.
     QGraphicsItem*                  getGraphics();    
     int                             getNumTrianglesVisited();
-
     
+    // Static helper function to draw 2D faces to QgrahpicsItems.
     static QGraphicsPolygonItem*    drawTriangle(Face_handle f);
     
 protected:
@@ -52,7 +52,9 @@ protected:
     // List of faces this walk intersects.
     QList<Face_handle>              faces;
     
-    // Helper function to draw triangles.
+    // This allows subclasses to add faces to the current walk. 
+    // Doing this enables the base-class functions to work.
+    void                            addToWalk(Face_handle f);
 };
 
 /******************************************************************************
@@ -77,15 +79,15 @@ public:
 ******************************************************************************/
 
 template <typename T>
-class VisibillityWalk : public Walk<T>
+class VisibilityWalk : public Walk<T>
 {
     typedef typename T::Face                            Face;
     typedef typename T::Point                           Point;    
     typedef typename T::Face_handle                     Face_handle;
-    typedef typename T::Geom_traits                     Gt;
+    typedef typename T::Geom_traits                     Gt;    
     
 public:    
-    VisibillityWalk(Point p, T* dt, Face_handle f=Face_handle());
+    VisibilityWalk(Point p, T* dt, Face_handle f=Face_handle());
 };
 /*****************************************************************************/  
 
@@ -126,7 +128,7 @@ StraightWalk<T>::StraightWalk(Point p, T* dt, Face_handle f)
     
     do {
         Face_handle f = lfc;
-        this->faces.append(f);        
+        addToWalk(f);        
     } while (++lfc != done);          
 }
 
@@ -136,23 +138,60 @@ StraightWalk<T>::StraightWalk(Point p, T* dt, Face_handle f)
 
 // Perform a visibility walk, storing triangles visited in base class.
 template <typename T>
-VisibillityWalk<T>::VisibillityWalk(Point p, T* dt, Face_handle f)
+VisibilityWalk<T>::VisibilityWalk(Point p, T* dt, Face_handle f)
 {
+    
+    // The user did not provide a face handle. So just use the infinite face.
+    if (f==Face_handle())
+        f=dt->infinite_face();
+        
+    // This is where we store the current face.
+    Face_handle c = f;    
+    
     // Create a binary random number generator.
     boost::rand48 rng;
     boost::uniform_smallint<> two(0, 1);
     boost::variate_generator<boost::rand48&, boost::uniform_smallint<> > coin(rng, two);    
-    
-
+  
+    // Loop until we find our destination point.
     while(1)
     {
-        int left_first = coin()%2;
-/*
+        if (dt->is_infinite(c)) break;
+        
+        int left_first   = coin() % 2;
+
         const Point & p0 = c->vertex( 0 )->point();
         const Point & p1 = c->vertex( 1 )->point();
         const Point & p2 = c->vertex( 2 )->point();
         
-  */      
+        CGAL::Orientation o0, o1, o2;
+        
+    	o0 = orientation(p0,p1,p);    	    	
+    	if ( o0 == CGAL::NEGATIVE ) {  
+            c = c->neighbor(2);            
+            addToWalk(c);
+            continue;
+	    }
+	    
+	    	    
+    	o0 = orientation(p2,p0,p);    	    	
+    	if ( o0 == CGAL::NEGATIVE ) {  
+            c = c->neighbor(1);            
+            addToWalk(c);
+            continue;
+	    }
+	    
+	    	    
+    	o0 = orientation(p1,p2,p);    	    	
+    	if ( o0 == CGAL::NEGATIVE ) {  
+            c = c->neighbor(0);
+            addToWalk(c);
+            continue;
+	    }
+	    
+	    // We are done.
+        break;
+  
     }
 
     
@@ -165,6 +204,14 @@ VisibillityWalk<T>::VisibillityWalk(Point p, T* dt, Face_handle f)
 * so that we do not have to re-implement this functionality multiple times.
 *
 ******************************************************************************/
+
+template <typename T>  
+void Walk<T>::addToWalk(Face_handle f)
+{
+    faces.append(f);
+}
+
+/*****************************************************************************/  
 
 // Return the number of faces visited in this walk.
 template <typename T>  
@@ -200,6 +247,7 @@ QGraphicsItem* Walk<T>::getGraphics()
 /*****************************************************************************/  
 
 // Helper-function to create a triangle graphics item.
+// Note that this is publically accessible and static.
 template <typename T>
 QGraphicsPolygonItem* Walk<T>::drawTriangle(Face_handle f)
 {
@@ -208,7 +256,6 @@ QGraphicsPolygonItem* Walk<T>::drawTriangle(Face_handle f)
 
     // We store this triangle as a polygonItem.
     QGraphicsPolygonItem *polygonItem = 0;
-
 
     // Convert a face into a polygon for plotting.
     QVector<QPointF>      polygon;    
@@ -222,7 +269,6 @@ QGraphicsPolygonItem* Walk<T>::drawTriangle(Face_handle f)
     // The "look" of the triangle.
     polygonItem->setPen( QPen(Qt::darkGreen) );
     polygonItem->setBrush( QColor("#D2D2EB") );            
-
     
     return polygonItem;
 }
