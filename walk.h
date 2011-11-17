@@ -196,10 +196,8 @@ VisibilityWalk<T>::VisibilityWalk(Point p, T* dt, Face_handle f)
 	    
 	    // We are done.
         break;
-  
-    }
 
-    
+    }    
 } 
 
 /******************************************************************************
@@ -242,16 +240,11 @@ QGraphicsItem* Walk<T>::getGraphics()
     typename QList<typename T::Face_handle>::const_iterator i;
     for (i = faces.begin(); i != faces.end(); ++i)
     {
-        qDebug() << "looping faces";
         // Draw this triangle in the walk.
-        if (*i !=0)
+        if (! dt->is_infinite( *i ) ) 
         {
-            if (! dt->is_infinite( *i ) ) 
-            {
-            //    std::cout << (*i)->vertex(0)->point() << " " << (*i)->vertex(1)->point() << " " << (*i)->vertex(2)->point();
-                QGraphicsPolygonItem *tr = drawTriangle(*i);         
-               g->addToGroup(tr);        
-            }
+            QGraphicsPolygonItem *tr = drawTriangle(*i);         
+            g->addToGroup(tr);        
         }
     }
 

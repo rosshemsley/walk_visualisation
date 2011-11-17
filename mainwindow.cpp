@@ -80,33 +80,26 @@ void MainWindow::updateScene()
     if (inputPoints > 0) 
     {
         Face_handle f = dt->locate(c(points[0]));
-        if (f != 0)
-        {
-            if (!dt->is_infinite(f))
-            {        
-            
-                if (drawStraightWalk)
-                {
-                    StraightWalk<Delaunay> w(c(points[1]), dt, f);
-                    QGraphicsItem* walkGraphics = w.getGraphics();
-                    walkItems.append(walkGraphics);
-                    scene->addItem(walkGraphics);  
-                                                      
-                }
-            
-                if (drawVisibilityWalk)
-                {
-                    qDebug() << "Drawing vis walk";
-                    VisibilityWalk<Delaunay> w(c(points[1]), dt, f);
-                    QGraphicsItem* walkGraphics = w.getGraphics();
-                    walkItems.append(walkGraphics);
-                    scene->addItem(walkGraphics);                
-                }
-            
-            
+
+        if (!dt->is_infinite(f))
+        {                
+            if (drawStraightWalk)
+            {
+                StraightWalk<Delaunay> w(c(points[1]), dt, f);
+                QGraphicsItem* walkGraphics = w.getGraphics();
+                walkItems.append(walkGraphics);
+                scene->addItem(walkGraphics);                                                    
             }
-     
-        }
+        
+            if (drawVisibilityWalk)
+            {
+                qDebug() << "Drawing vis walk";
+                VisibilityWalk<Delaunay> w(c(points[1]), dt, f);
+                QGraphicsItem* walkGraphics = w.getGraphics();
+                walkItems.append(walkGraphics);
+                scene->addItem(walkGraphics);                
+            }                
+        }     
     }
 
     if (inputPoints == 0)
@@ -114,17 +107,13 @@ void MainWindow::updateScene()
         // Find the face we are hovering over.
         Face_handle f = dt->locate(c(points[0]));
         
-        if (f!=0)
-        {
-        
-            // Check the face is finite, and then draw it.
-            if (!dt->is_infinite(f))
-            {        
-                QGraphicsItem *tr = Walk<Delaunay>::drawTriangle(f);
-                scene->addItem(tr);
-                walkItems.append(tr);
-            }
-        }        
+        // Check the face is finite, and then draw it.
+        if (!dt->is_infinite(f))
+        {        
+            QGraphicsItem *tr = Walk<Delaunay>::drawTriangle(f);
+            scene->addItem(tr);
+            walkItems.append(tr);
+        }
     }
     
     if (inputPoints >= 1)
