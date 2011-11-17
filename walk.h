@@ -44,7 +44,7 @@ public:
     int                             getNumTrianglesVisited();
     
     // Static helper function to draw 2D faces to QgrahpicsItems.
-    static QGraphicsPolygonItem*    drawTriangle(Face_handle f);
+    static QGraphicsPolygonItem*    drawTriangle(Face_handle f,QPen pen=QPen(), QBrush brush = QBrush());
     
 protected:
     // Pointer to the triangluation this walk is on.
@@ -229,13 +229,9 @@ int Walk<T>::getNumTrianglesVisited()
 template <typename T>  
 QGraphicsItem* Walk<T>::getGraphics()
 {
-    
-    qDebug() << "Getting graphics";
     // This GraphicsItem Group will store the triangles from the walk.
     QGraphicsItemGroup* g = new QGraphicsItemGroup();
-    
-    qDebug() << faces.size();
-    
+        
     // Iterate over faces in this walk.
     typename QList<typename T::Face_handle>::const_iterator i;
     for (i = faces.begin(); i != faces.end(); ++i)
@@ -243,7 +239,7 @@ QGraphicsItem* Walk<T>::getGraphics()
         // Draw this triangle in the walk.
         if (! dt->is_infinite( *i ) ) 
         {
-            QGraphicsPolygonItem *tr = drawTriangle(*i);         
+            QGraphicsPolygonItem *tr = drawTriangle(*i,QPen(),QColor("#D2D2EB") );         
             g->addToGroup(tr);        
         }
     }
@@ -256,7 +252,7 @@ QGraphicsItem* Walk<T>::getGraphics()
 // Helper-function to create a triangle graphics item.
 // Note that this is publically accessible and static.
 template <typename T>
-QGraphicsPolygonItem* Walk<T>::drawTriangle(Face_handle f)
+QGraphicsPolygonItem* Walk<T>::drawTriangle(Face_handle f, QPen pen, QBrush brush)
 {
     // Helper to convert between different point types.
     CGAL::Qt::Converter<Gt> c;
@@ -274,8 +270,8 @@ QGraphicsPolygonItem* Walk<T>::drawTriangle(Face_handle f)
     polygonItem = new QGraphicsPolygonItem(QPolygonF(polygon));
 
     // The "look" of the triangle.
-    polygonItem->setPen( QPen(Qt::darkGreen) );
-    polygonItem->setBrush( QColor("#D2D2EB") );            
+    polygonItem->setPen(pen);
+    polygonItem->setBrush(brush);
     
     return polygonItem;
 }

@@ -64,8 +64,6 @@ void MainWindow::visibilityWalk_checkbox_change(int state)
 
 void MainWindow::updateScene()
 {
-    qDebug() << inputPoints;
-    qDebug() << points[0] << ", " << points[1];
     
     // Style for points.
     QPen   pen(Qt::blue);
@@ -93,7 +91,6 @@ void MainWindow::updateScene()
         
             if (drawVisibilityWalk)
             {
-                qDebug() << "Drawing vis walk";
                 VisibilityWalk<Delaunay> w(c(points[1]), dt, f);
                 QGraphicsItem* walkGraphics = w.getGraphics();
                 walkItems.append(walkGraphics);
@@ -102,7 +99,7 @@ void MainWindow::updateScene()
         }     
     }
 
-    if (inputPoints == 0)
+    if (inputPoints >= 0)
     {
         // Find the face we are hovering over.
         Face_handle f = dt->locate(c(points[0]));
@@ -110,13 +107,13 @@ void MainWindow::updateScene()
         // Check the face is finite, and then draw it.
         if (!dt->is_infinite(f))
         {        
-            QGraphicsItem *tr = Walk<Delaunay>::drawTriangle(f);
+            QGraphicsItem *tr = Walk<Delaunay>::drawTriangle(f,QPen(),QColor("#EBD2D2"));
             scene->addItem(tr);
             walkItems.append(tr);
         }
     }
     
-    if (inputPoints >= 1)
+    if (inputPoints == 2)
     {
         QPoint p = points[1];
         walkItems.append(scene->addEllipse(QRect(p, QSize(10,10)),pen,brush));        
