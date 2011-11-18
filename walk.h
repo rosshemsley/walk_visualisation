@@ -40,7 +40,7 @@ class Walk
     
 public:
     // Create a graphics item for drawing this triangulation.
-    QGraphicsItem*                  getGraphics();    
+    QGraphicsItemGroup*             getGraphics();    
     int                             getNumTrianglesVisited();
     
     // Static helper function to draw 2D faces to QgrahpicsItems.
@@ -111,6 +111,10 @@ class SWalk : public Walk<T>
     typedef typename T::Point                           Point;    
     typedef typename T::Face_handle                     Face_handle;
     typedef typename T::Geom_traits                     Gt;    
+
+private: 
+    // We store the pivot points for this walk so we can draw them later.
+    QList<Point> pivots;
     
 public:    
     SWalk(Point p, T* dt, Face_handle f=Face_handle())
@@ -150,6 +154,7 @@ public:
 
         for (int j=0; j<100; j++)
         {
+            qDebug() << "New triangle";
             // Find the index of the previous face relative to us.
             int i = c->index(prev);
 
@@ -161,11 +166,14 @@ public:
             
             Point  p1;
             // The second vertex is either cw or ccw of this point.
+            // This is the _Pivot_ point.        
             if (clockwise)
                 p1 = c->vertex(c->cw(i))->point();
             else
                 p1 = c->vertex(c->ccw(i))->point();            
             
+            
+            pivots.append(p1);             
             
             // If we can't keep going in this direction,
             // then either we have arrived (one more orientation) or 
@@ -179,6 +187,7 @@ public:
             
             if (( CGAL::orientation(p0,p1,p) == direction) )
             {
+                qDebug() << "Got stuck";
                 Point p2;
                 
                 // The remaining point.
@@ -191,9 +200,12 @@ public:
                 // If we can't see the final point still, we are done.
                 if ( (CGAL::orientation(p0, p2, p) != direction) )
                 {
+                    qDebug() << "done";
                     addToWalk(c);
                     break;
                 } else {
+                    qDebug()<< "";
+                    qDebug() << "Entering new triangle";
                     
                     addToWalk(c);
                     // Else continue through this face.
@@ -204,7 +216,9 @@ public:
                         c    = c->neighbor(c->ccw(i));                    
                 }
             } else {
-                addToWalk(c);                
+
+                addToWalk(c);   
+                
                 prev = c;
                 
                 if (clockwise)
@@ -212,9 +226,30 @@ public:
                 else
                     c    = c->neighbor(c->cw(i));
                     
-               clockwise = !clockwise;
+           //    clockwise = !clockwise;
             }                           
         }
+    }
+    
+    
+    QGraphicsItemGroup* getGraphics()
+    {
+        
+        CGAL::Qt::Converter<Gt> c;
+        
+        QGraphicsItemGroup* g = Walk<T>::getGraphics();
+        
+        
+        QPen   pen(Qt::blue);
+        QBrush brush(Qt::blue);
+        
+        
+        // Iterate over faces in this walk.
+        typename QList<typename T::Point>::const_iterator i;
+        for (i = pivots.begin(); i != pivots.end(); ++i)
+            g->addToGroup(new QGraphicsEllipseItem(QRect(c(*i).toPoint(), QSize(10,10))  )        );
+        
+        return g;
     }
 };
 
@@ -292,6 +327,8 @@ public:
 
         }    
     }
+    
+
 };
 
 /******************************************************************************
@@ -321,7 +358,7 @@ int Walk<T>::getNumTrianglesVisited()
 
 // Create a graphics item representing this walk.
 template <typename T>  
-QGraphicsItem* Walk<T>::getGraphics()
+QGraphicsItemGroup* Walk<T>::getGraphics()
 {
     // This GraphicsItem Group will store the triangles from the walk.
     QGraphicsItemGroup* g = new QGraphicsItemGroup();
