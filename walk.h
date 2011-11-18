@@ -148,7 +148,7 @@ public:
 
 
 
-        while (1)
+        for (int j=0; j<100; j++)
         {
             // Find the index of the previous face relative to us.
             int i = c->index(prev);
@@ -171,7 +171,7 @@ public:
                 const Point & p2 = c->vertex(c->ccw(i))->point();
                 
                 // If we can't see the final point still, we are done.
-                if ( CGAL::orientation(p0, p2, p) == CGAL::NEGATIVE )
+                if ( CGAL::orientation(p0, p2, p) == CGAL::POSITIVE )
                 {
                     break;
                 } else {
