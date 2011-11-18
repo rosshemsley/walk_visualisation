@@ -101,11 +101,11 @@ public:
 };
 
 /******************************************************************************
-* S-walk strategy
+* Pivot Walk strategy
 ******************************************************************************/
 
 template <typename T>
-class SWalk : public Walk<T>
+class PivotWalk : public Walk<T>
 {
     typedef typename T::Face                            Face;
     typedef typename T::Point                           Point;    
@@ -117,8 +117,11 @@ private:
     QList<Point> pivots;
     
 public:    
-    SWalk(Point p, T* dt, Face_handle f=Face_handle())
+    PivotWalk(Point p, T* dt, Face_handle f=Face_handle())
     {
+        
+        int o_count =0;
+        int t_count =0;
         
         this->dt = dt;
 
@@ -142,6 +145,9 @@ public:
             const Point & p0 = c->vertex(i)->point();
             const Point & p1 = c->vertex(c->cw(i))->point();
             
+            o_count ++;
+            t_count++;
+            
             // If we have found a face that can see the point.
             if ( CGAL::orientation(p0,p1,p) == CGAL::POSITIVE )
             {
@@ -156,7 +162,6 @@ public:
         {
             addToWalk(c);   
             
-            qDebug() << "New triangle";
             // Find the index of the previous face relative to us.
             int i = c->index(prev);
 
@@ -185,9 +190,9 @@ public:
             else
                 direction = CGAL::POSITIVE;
             
+            o_count++;
             if (( CGAL::orientation(p0,p1,p) == direction) )
             {
-                qDebug() << "Got stuck";
                 Point p2;
                 
                 // The remaining point.
@@ -196,23 +201,26 @@ public:
                 else
                     p2 = c->vertex(c->cw(i))->point();                
                 
-                
+                //o_count++;
                 // If we can't see the final point still, we are done.
                 if ( (CGAL::orientation(p0, p2, p) != direction) )
                 {
-                    qDebug() << "done";
+                    qDebug() << "PIV_WALK:";                    
+                    qDebug() << "Orientation tests: " << o_count;
+                    qDebug() << "Triangles visited: " << t_count;
+                                        
                     addToWalk(c);
                     break;
                     
                 // New pivot.
                 } else {
-                    qDebug()<< "";
-                    qDebug() << "Entering new triangle";
+
                     
                     pivots.append(p1);             
                     
                     addToWalk(c);
                     prev = c;
+                    t_count++;
                     if (clockwise)
                         c    = c->neighbor(c->cw(i));
                     else
@@ -225,7 +233,7 @@ public:
 
                 
                 prev = c;
-                
+                t_count++;
                 if (clockwise)
                     c    = c->neighbor(c->ccw(i));
                 else
@@ -273,6 +281,9 @@ class VisibilityWalk : public Walk<T>
 public:    
     VisibilityWalk(Point p, T* dt, Face_handle f=Face_handle())
     {
+        int o_count =0;
+        int t_count =0;
+        
 
         this->dt = dt;
 
@@ -303,25 +314,29 @@ public:
 
             CGAL::Orientation o0, o1, o2;
 
+            o_count++;
         	o0 = orientation(p0,p1,p);    	    	
         	if ( o0 == CGAL::NEGATIVE ) {  
-                c = c->neighbor(2);            
+                c = c->neighbor(2);  
+                t_count++;          
                 addToWalk(c);
                 continue;
     	    }
 
-
+            o_count++;
         	o0 = orientation(p2,p0,p);    	    	
         	if ( o0 == CGAL::NEGATIVE ) {  
-                c = c->neighbor(1);            
+                c = c->neighbor(1);      
+                t_count++;                      
                 addToWalk(c);
                 continue;
     	    }
 
-
+            o_count++;
         	o0 = orientation(p1,p2,p);    	    	
         	if ( o0 == CGAL::NEGATIVE ) {  
                 c = c->neighbor(0);
+                t_count++;
                 addToWalk(c);
                 continue;
     	    }
@@ -330,6 +345,9 @@ public:
             break;
 
         }    
+        qDebug() << "VIS_WALK:";
+        qDebug() << "Orientation tests: " << o_count;
+        qDebug() << "Triangles visited: " << t_count;
     }
     
 

@@ -55,12 +55,15 @@ private slots:
     void                            updateScene();
     void                            straightWalk_checkbox_change(int state);
     void                            visibilityWalk_checkbox_change(int state);
+    void                            pivotWalk_checkbox_change(int state);
+
 
 private:
     void                            createMenus();
     void                            createActions();    
     void                            randomTriangulation();    
 
+    bool                            drawPivotWalk;
     bool                            drawStraightWalk;
     bool                            drawVisibilityWalk;
     QMenu*                          fileMenu;

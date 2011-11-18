@@ -62,6 +62,14 @@ void MainWindow::visibilityWalk_checkbox_change(int state)
 
 /*****************************************************************************/
 
+void MainWindow::pivotWalk_checkbox_change(int state)
+{
+    drawPivotWalk = state;    
+    updateScene();
+}
+
+/*****************************************************************************/
+
 void MainWindow::updateScene()
 {
     
@@ -89,13 +97,21 @@ void MainWindow::updateScene()
                 scene->addItem(walkGraphics);                                                    
             }
         
-            if (drawVisibilityWalk)
+            if (drawPivotWalk)
             {
-                SWalk<Delaunay> w(c(points[1]), dt, f);
+                PivotWalk<Delaunay> w(c(points[1]), dt, f);
                 QGraphicsItem* walkGraphics = w.getGraphics();
                 walkItems.append(walkGraphics);
                 scene->addItem(walkGraphics);                
-            }                
+            }     
+
+            if (drawVisibilityWalk)
+            {
+                VisibilityWalk<Delaunay> w(c(points[1]), dt, f);
+                QGraphicsItem* walkGraphics = w.getGraphics();
+                walkItems.append(walkGraphics);
+                scene->addItem(walkGraphics);                
+            }                       
         }     
     }
 
@@ -150,13 +166,16 @@ MainWindow::MainWindow()
    
     QGroupBox *groupBox = new QGroupBox(tr("Walk Types"));
     QCheckBox *checkBox_visibility = new QCheckBox(tr("Visibility Walk"));
+    QCheckBox *checkBox_pivot   = new QCheckBox(tr("Pivot Walk"));
     QCheckBox *checkBox_straight   = new QCheckBox(tr("Straight Walk"));
 
     QVBoxLayout *vbox = new QVBoxLayout;
     vbox->addWidget(checkBox_visibility);
     vbox->addWidget(checkBox_straight);
+    vbox->addWidget(checkBox_pivot);    
     groupBox->setLayout(vbox);
 
+    connect(checkBox_pivot,      SIGNAL(stateChanged(int)), this, SLOT(pivotWalk_checkbox_change(int)));
     connect(checkBox_straight,   SIGNAL(stateChanged(int)), this, SLOT(straightWalk_checkbox_change(int)));
     connect(checkBox_visibility, SIGNAL(stateChanged(int)), this, SLOT(visibilityWalk_checkbox_change(int)));
    
