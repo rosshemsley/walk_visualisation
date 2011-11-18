@@ -133,7 +133,7 @@ public:
         addToWalk(c);
 
         // we swap direction every time we finish a cell.
-        bool clockwise=FALSE;
+        bool clockwise=TRUE;
 
         // To start, we find the first face which can see the point
         // and then walk through it.
@@ -154,6 +154,8 @@ public:
 
         for (int j=0; j<100; j++)
         {
+            addToWalk(c);   
+            
             qDebug() << "New triangle";
             // Find the index of the previous face relative to us.
             int i = c->index(prev);
@@ -172,8 +174,6 @@ public:
             else
                 p1 = c->vertex(c->ccw(i))->point();            
             
-            
-            pivots.append(p1);             
             
             // If we can't keep going in this direction,
             // then either we have arrived (one more orientation) or 
@@ -203,21 +203,26 @@ public:
                     qDebug() << "done";
                     addToWalk(c);
                     break;
+                    
+                // New pivot.
                 } else {
                     qDebug()<< "";
                     qDebug() << "Entering new triangle";
                     
+                    pivots.append(p1);             
+                    
                     addToWalk(c);
-                    // Else continue through this face.
                     prev = c;
                     if (clockwise)
                         c    = c->neighbor(c->cw(i));
                     else
-                        c    = c->neighbor(c->ccw(i));                    
+                        c    = c->neighbor(c->ccw(i)); 
+                        
+                    clockwise = !clockwise;
+                                        
                 }
             } else {
 
-                addToWalk(c);   
                 
                 prev = c;
                 
@@ -226,7 +231,6 @@ public:
                 else
                     c    = c->neighbor(c->cw(i));
                     
-           //    clockwise = !clockwise;
             }                           
         }
     }
