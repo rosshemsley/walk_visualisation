@@ -129,11 +129,11 @@ public:
         addToWalk(c);
 
         // we swap direction every time we finish a cell.
-        bool clockwise=TRUE;
+        bool clockwise=FALSE;
 
         // To start, we find the first face which can see the point
         // and then walk through it.
-        for (int i=0; i<2; i++)
+        for (int i=0; i<3; i++)
         {
             const Point & p0 = c->vertex(i)->point();
             const Point & p1 = c->vertex(c->cw(i))->point();
@@ -153,38 +153,66 @@ public:
             // Find the index of the previous face relative to us.
             int i = c->index(prev);
 
-            // Test the orientatino of the face ccw/cw of this face depending
+            // Test the orientation of the face ccw/cw of this face depending
             // on the current direction.
             
             // The first vertex is always the one opposite the previous face.
             const Point & p0 = c->vertex(i)->point();
+            
+            Point  p1;
             // The second vertex is either cw or ccw of this point.
-            const Point & p1 = c->vertex(c->cw(i))->point();
+            if (clockwise)
+                p1 = c->vertex(c->cw(i))->point();
+            else
+                p1 = c->vertex(c->ccw(i))->point();            
+            
             
             // If we can't keep going in this direction,
             // then either we have arrived (one more orientation) or 
             // we need to jump to the next cell. (go through the remaining
             // face).
-            if ( CGAL::orientation(p0,p1,p) == CGAL::NEGATIVE )
+            CGAL::Orientation direction;
+            if (clockwise)
+                direction = CGAL::NEGATIVE;
+            else
+                direction = CGAL::POSITIVE;
+            
+            if (( CGAL::orientation(p0,p1,p) == direction) )
             {
+                Point p2;
+                
                 // The remaining point.
-                const Point & p2 = c->vertex(c->ccw(i))->point();
+                if (clockwise)
+                    p2 = c->vertex(c->ccw(i))->point();
+                else
+                    p2 = c->vertex(c->cw(i))->point();                
+                
                 
                 // If we can't see the final point still, we are done.
-                if ( CGAL::orientation(p0, p2, p) == CGAL::POSITIVE )
+                if ( (CGAL::orientation(p0, p2, p) != direction) )
                 {
+                    addToWalk(c);
                     break;
                 } else {
                     
                     addToWalk(c);
                     // Else continue through this face.
                     prev = c;
-                    c    = c->neighbor(c->cw(i));
+                    if (clockwise)
+                        c    = c->neighbor(c->cw(i));
+                    else
+                        c    = c->neighbor(c->ccw(i));                    
                 }
             } else {
                 addToWalk(c);                
                 prev = c;
-                c    = c->neighbor(c->ccw(i));
+                
+                if (clockwise)
+                    c    = c->neighbor(c->ccw(i));
+                else
+                    c    = c->neighbor(c->cw(i));
+                    
+               clockwise = !clockwise;
             }                           
         }
     }
