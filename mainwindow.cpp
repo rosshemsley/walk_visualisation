@@ -91,7 +91,7 @@ void MainWindow::updateScene()
         
             if (drawVisibilityWalk)
             {
-                VisibilityWalk<Delaunay> w(c(points[1]), dt, f);
+                SWalk<Delaunay> w(c(points[1]), dt, f);
                 QGraphicsItem* walkGraphics = w.getGraphics();
                 walkItems.append(walkGraphics);
                 scene->addItem(walkGraphics);                

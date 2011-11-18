@@ -44,7 +44,9 @@ public:
     int                             getNumTrianglesVisited();
     
     // Static helper function to draw 2D faces to QgrahpicsItems.
-    static QGraphicsPolygonItem*    drawTriangle(Face_handle f,QPen pen=QPen(), QBrush brush = QBrush());
+    static QGraphicsPolygonItem*    drawTriangle(Face_handle f,
+                                                 QPen        pen   = QPen(), 
+                                                 QBrush      brush = QBrush());
     
 protected:
     // Pointer to the triangluation this walk is on.
@@ -71,8 +73,123 @@ class StraightWalk : public Walk<T>
     typedef typename T::Geom_traits                     Gt;
     
 public:    
-    StraightWalk(Point p, T* dt, Face_handle f=Face_handle());  
+    StraightWalk(Point p, T* dt, Face_handle f=Face_handle())
+    {
+        // Store a reference to the triangulation.
+        this->dt = dt;
+
+        // Create a circulator describing the walk.
+        CGAL::Qt::Converter<Gt> c;
+
+        if (f==Face_handle())
+            f=dt->infinite_face();
+
+        Point x = f->vertex(0)->point();
+
+        // Use CGAL built-in line walk.
+        Lfc lfc = dt->line_walk (x,p), done(lfc);     
+
+        // Take all the items from the circulator and add them to a list.
+        if (lfc != 0)
+        {    
+            do {
+                Face_handle f = lfc;
+                addToWalk(f);        
+            } while (++lfc != done);          
+        }
+    }
 };
+
+/******************************************************************************
+* S-walk strategy
+******************************************************************************/
+
+template <typename T>
+class SWalk : public Walk<T>
+{
+    typedef typename T::Face                            Face;
+    typedef typename T::Point                           Point;    
+    typedef typename T::Face_handle                     Face_handle;
+    typedef typename T::Geom_traits                     Gt;    
+    
+public:    
+    SWalk(Point p, T* dt, Face_handle f=Face_handle())
+    {
+        
+        this->dt = dt;
+
+        // The user did not provide a face handle. So just use the infinite face.
+        if (f==Face_handle())
+            f=dt->infinite_face();
+
+        // This is where we store the current face.
+        Face_handle c    = f;    
+        Face_handle prev = c;
+        
+        addToWalk(c);
+
+        // we swap direction every time we finish a cell.
+        bool clockwise=TRUE;
+
+        // To start, we find the first face which can see the point
+        // and then walk through it.
+        for (int i=0; i<2; i++)
+        {
+            const Point & p0 = c->vertex(i)->point();
+            const Point & p1 = c->vertex(c->cw(i))->point();
+            
+            // If we have found a face that can see the point.
+            if ( CGAL::orientation(p0,p1,p) == CGAL::POSITIVE )
+            {
+                c = c->neighbor(c->ccw(i));
+                break;
+            }
+        }
+
+
+
+        while (1)
+        {
+            // Find the index of the previous face relative to us.
+            int i = c->index(prev);
+
+            // Test the orientatino of the face ccw/cw of this face depending
+            // on the current direction.
+            
+            // The first vertex is always the one opposite the previous face.
+            const Point & p0 = c->vertex(i)->point();
+            // The second vertex is either cw or ccw of this point.
+            const Point & p1 = c->vertex(c->cw(i))->point();
+            
+            // If we can't keep going in this direction,
+            // then either we have arrived (one more orientation) or 
+            // we need to jump to the next cell. (go through the remaining
+            // face).
+            if ( CGAL::orientation(p0,p1,p) == CGAL::NEGATIVE )
+            {
+                // The remaining point.
+                const Point & p2 = c->vertex(c->ccw(i))->point();
+                
+                // If we can't see the final point still, we are done.
+                if ( CGAL::orientation(p0, p2, p) == CGAL::NEGATIVE )
+                {
+                    break;
+                } else {
+                    
+                    addToWalk(c);
+                    // Else continue through this face.
+                    prev = c;
+                    c    = c->neighbor(c->cw(i));
+                }
+            } else {
+                addToWalk(c);                
+                prev = c;
+                c    = c->neighbor(c->ccw(i));
+            }                           
+        }
+    }
+};
+
 
 /******************************************************************************
 * Visibility walk strategy
@@ -87,118 +204,67 @@ class VisibilityWalk : public Walk<T>
     typedef typename T::Geom_traits                     Gt;    
     
 public:    
-    VisibilityWalk(Point p, T* dt, Face_handle f=Face_handle());
-};
-/*****************************************************************************/  
-
-
-
-/******************************************************************************
-*
-* Implementations
-*
-******************************************************************************/
-
-
-
-/******************************************************************************
-* Straight Walk
-******************************************************************************/  
-  
-// Perform a straight walk, storing triangles visited in base class.
-template <typename T>
-StraightWalk<T>::StraightWalk(Point p, T* dt, Face_handle f)
-{
-    // Store a reference to the triangulation.
-    this->dt = dt;
-        
-    // Create a circulator describing the walk.
-    CGAL::Qt::Converter<Gt> c;
- 
-    if (f==Face_handle())
-        f=dt->infinite_face();
- 
-    Point x = f->vertex(0)->point();
-    
-    // Use CGAL built-in line walk.
-    Lfc lfc = dt->line_walk (x,p), done(lfc);     
-  
-    // Take all the items from the circulator and add them to a list.
-    if (lfc != 0)
-    {    
-        do {
-            Face_handle f = lfc;
-            addToWalk(f);        
-        } while (++lfc != done);          
-    }
-}
-
-/******************************************************************************
-* Visibility Walk
-******************************************************************************/
-
-// Perform a visibility walk, storing triangles visited in base class.
-template <typename T>
-VisibilityWalk<T>::VisibilityWalk(Point p, T* dt, Face_handle f)
-{
-    
-    this->dt = dt;
-    
-    // The user did not provide a face handle. So just use the infinite face.
-    if (f==Face_handle())
-        f=dt->infinite_face();
-        
-    // This is where we store the current face.
-    Face_handle c = f;    
-    
-    addToWalk(c);
-    
-    // Create a binary random number generator.
-    boost::rand48 rng;
-    boost::uniform_smallint<> two(0, 1);
-    boost::variate_generator<boost::rand48&, boost::uniform_smallint<> > coin(rng, two);    
-  
-    // Loop until we find our destination point.
-    while(1)
+    VisibilityWalk(Point p, T* dt, Face_handle f=Face_handle())
     {
-        if (dt->is_infinite(c)) break;
-        
-        int left_first   = coin() % 2;
 
-        const Point & p0 = c->vertex( 0 )->point();
-        const Point & p1 = c->vertex( 1 )->point();
-        const Point & p2 = c->vertex( 2 )->point();
-        
-        CGAL::Orientation o0, o1, o2;
-        
-    	o0 = orientation(p0,p1,p);    	    	
-    	if ( o0 == CGAL::NEGATIVE ) {  
-            c = c->neighbor(2);            
-            addToWalk(c);
-            continue;
-	    }
-	    
-	    	    
-    	o0 = orientation(p2,p0,p);    	    	
-    	if ( o0 == CGAL::NEGATIVE ) {  
-            c = c->neighbor(1);            
-            addToWalk(c);
-            continue;
-	    }
-	    
-	    	    
-    	o0 = orientation(p1,p2,p);    	    	
-    	if ( o0 == CGAL::NEGATIVE ) {  
-            c = c->neighbor(0);
-            addToWalk(c);
-            continue;
-	    }
-	    
-	    // We are done.
-        break;
+        this->dt = dt;
 
-    }    
-} 
+        // The user did not provide a face handle. So just use the infinite face.
+        if (f==Face_handle())
+            f=dt->infinite_face();
+
+        // This is where we store the current face.
+        Face_handle c = f;    
+
+        addToWalk(c);
+
+        // Create a binary random number generator.
+        boost::rand48 rng;
+        boost::uniform_smallint<> two(0, 1);
+        boost::variate_generator<boost::rand48&, boost::uniform_smallint<> > coin(rng, two);    
+
+        // Loop until we find our destination point.
+        while(1)
+        {
+            if (dt->is_infinite(c)) break;
+
+            int left_first   = coin() % 2;
+
+            const Point & p0 = c->vertex( 0 )->point();
+            const Point & p1 = c->vertex( 1 )->point();
+            const Point & p2 = c->vertex( 2 )->point();
+
+            CGAL::Orientation o0, o1, o2;
+
+        	o0 = orientation(p0,p1,p);    	    	
+        	if ( o0 == CGAL::NEGATIVE ) {  
+                c = c->neighbor(2);            
+                addToWalk(c);
+                continue;
+    	    }
+
+
+        	o0 = orientation(p2,p0,p);    	    	
+        	if ( o0 == CGAL::NEGATIVE ) {  
+                c = c->neighbor(1);            
+                addToWalk(c);
+                continue;
+    	    }
+
+
+        	o0 = orientation(p1,p2,p);    	    	
+        	if ( o0 == CGAL::NEGATIVE ) {  
+                c = c->neighbor(0);
+                addToWalk(c);
+                continue;
+    	    }
+
+    	    // We are done.
+            break;
+
+        }    
+    }
+};
 
 /******************************************************************************
 * Walk base-class functions
@@ -239,7 +305,7 @@ QGraphicsItem* Walk<T>::getGraphics()
         // Draw this triangle in the walk.
         if (! dt->is_infinite( *i ) ) 
         {
-            QGraphicsPolygonItem *tr = drawTriangle(*i,QPen(),QColor("#D2D2EB") );         
+            QGraphicsPolygonItem *tr=drawTriangle(*i,QPen(),QColor("#D2D2EB"));         
             g->addToGroup(tr);        
         }
     }
@@ -252,7 +318,9 @@ QGraphicsItem* Walk<T>::getGraphics()
 // Helper-function to create a triangle graphics item.
 // Note that this is publically accessible and static.
 template <typename T>
-QGraphicsPolygonItem* Walk<T>::drawTriangle(Face_handle f, QPen pen, QBrush brush)
+QGraphicsPolygonItem* Walk<T>::drawTriangle( Face_handle f,
+                                             QPen        pen,
+                                             QBrush      brush )
 {
     // Helper to convert between different point types.
     CGAL::Qt::Converter<Gt> c;
