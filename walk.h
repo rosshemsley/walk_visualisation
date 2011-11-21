@@ -133,7 +133,6 @@ public:
         Face_handle c    = f;    
         Face_handle prev = c;
         
-        addToWalk(c);
 
         // we swap direction every time we finish a cell.
         bool clockwise=TRUE;
@@ -160,7 +159,7 @@ public:
 
         for (int j=0; j<100; j++)
         {
-            addToWalk(c);   
+            addToWalk(c);
             
             // Find the index of the previous face relative to us.
             int i = c->index(prev);
@@ -239,10 +238,13 @@ public:
                 else
                     c    = c->neighbor(c->cw(i));
                     
-            }                           
+            }       
+            
+                                
         }
     }
     
+    // Overload get graphics to draw the pivots.
     
     QGraphicsItemGroup* getGraphics()
     {
@@ -259,8 +261,13 @@ public:
         // Iterate over faces in this walk.
         typename QList<typename T::Point>::const_iterator i;
         for (i = pivots.begin(); i != pivots.end(); ++i)
-            g->addToGroup(new QGraphicsEllipseItem(QRect(c(*i).toPoint(), QSize(10,10))  )        );
+        {    
+            QGraphicsEllipseItem *e = new QGraphicsEllipseItem(QRect(c(*i).toPoint() + QPoint(-6,-6), QSize(12,12))  );
+            e->setBrush(brush);
+            e->setPen(pen);
+            g->addToGroup(e);
         
+        }
         return g;
     }
 };
@@ -294,7 +301,6 @@ public:
         // This is where we store the current face.
         Face_handle c = f;    
 
-        addToWalk(c);
 
         // Create a binary random number generator.
         boost::rand48 rng;

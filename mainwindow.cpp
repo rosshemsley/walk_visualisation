@@ -81,6 +81,20 @@ void MainWindow::updateScene()
     // drawn as part of the walk.
     while (! walkItems.isEmpty() )
         scene->removeItem(walkItems.takeFirst());
+                
+    if (inputPoints >= 0)
+    {
+        // Find the face we are hovering over.
+        Face_handle f = dt->locate(c(points[0]));
+        
+        // Check the face is finite, and then draw it.
+        if (!dt->is_infinite(f))
+        {        
+            QGraphicsItem *tr = Walk<Delaunay>::drawTriangle(f,QPen(),QColor("#EBD2D2"));
+            scene->addItem(tr);
+            walkItems.append(tr);
+        }
+    }        
         
     // If we have enough data to plot a walk, then do so.
     if (inputPoints > 0) 
@@ -114,20 +128,6 @@ void MainWindow::updateScene()
             }                       
         }     
     }
-
-    if (inputPoints >= 0)
-    {
-        // Find the face we are hovering over.
-        Face_handle f = dt->locate(c(points[0]));
-        
-        // Check the face is finite, and then draw it.
-        if (!dt->is_infinite(f))
-        {        
-            QGraphicsItem *tr = Walk<Delaunay>::drawTriangle(f,QPen(),QColor("#EBD2D2"));
-            scene->addItem(tr);
-            walkItems.append(tr);
-        }
-    }
     
     if (inputPoints == 2)
     {
@@ -155,6 +155,9 @@ MainWindow::MainWindow()
     // These are attached to both the GrahpicsView and GraphicsScene.
     scene->installEventFilter(this);    
     view->installEventFilter(this);
+    
+    view->setHorizontalScrollBarPolicy ( Qt::ScrollBarAlwaysOff );
+    view->setVerticalScrollBarPolicy ( Qt::ScrollBarAlwaysOff );
     
     // This allows us to receive events when the mouse moves.
     view->setMouseTracking(true); 
