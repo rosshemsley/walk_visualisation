@@ -100,8 +100,9 @@ void MainWindow::updateScene()
     if (inputPoints > 0) 
     {
         Face_handle f = dt->locate(c(points[0]));
-
-        if (!dt->is_infinite(f))
+        Face_handle g = dt->locate(c(points[1]));
+        
+        if ( !dt->is_infinite(f) && !dt->is_infinite(g) )
         {                
             if (drawStraightWalk)
             {

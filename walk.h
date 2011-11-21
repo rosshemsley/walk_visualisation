@@ -117,6 +117,9 @@ private:
     QList<Point> pivots;
     
 public:    
+    
+    /*************************************************************************/
+        
     PivotWalk(Point p, T* dt, Face_handle f=Face_handle())
     {
         
@@ -170,7 +173,9 @@ public:
             // The first vertex is always the one opposite the previous face.
             const Point & p0 = c->vertex(i)->point();
             
+            // p1 is the 'pivot' vertex.
             Point  p1;
+
             // The second vertex is either cw or ccw of this point.
             // This is the _Pivot_ point.        
             if (clockwise)
@@ -209,6 +214,8 @@ public:
                     qDebug() << "Triangles visited: " << t_count;
                                         
                     addToWalk(c);
+                    pivots.append(p1);             
+
                     break;
                     
                 // New pivot.
@@ -244,25 +251,29 @@ public:
         }
     }
     
-    // Overload get graphics to draw the pivots.
+    /*************************************************************************/
     
+    // Overload get graphics to draw the pivots.    
     QGraphicsItemGroup* getGraphics()
     {
         
         CGAL::Qt::Converter<Gt> c;
         
+        // Invoke the base-class drawing method to get
+        // the triangles involved.
         QGraphicsItemGroup* g = Walk<T>::getGraphics();
         
-        
+        // The drawing style for the pivots.        
         QPen   pen(Qt::blue);
         QBrush brush(Qt::blue);
-        
-        
+                
         // Iterate over faces in this walk.
         typename QList<typename T::Point>::const_iterator i;
         for (i = pivots.begin(); i != pivots.end(); ++i)
         {    
-            QGraphicsEllipseItem *e = new QGraphicsEllipseItem(QRect(c(*i).toPoint() + QPoint(-6,-6), QSize(12,12))  );
+            QGraphicsEllipseItem *e = new QGraphicsEllipseItem( QRect(
+                                            c(*i).toPoint() + QPoint(-6,-6), 
+                                            QSize(12,12)                   ) );
             e->setBrush(brush);
             e->setPen(pen);
             g->addToGroup(e);
@@ -270,6 +281,9 @@ public:
         }
         return g;
     }
+    
+    /*************************************************************************/
+    
 };
 
 
