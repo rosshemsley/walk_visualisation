@@ -144,7 +144,6 @@ public:
         Face_handle c    = f;    
         Face_handle prev = c;        
 
-
         // **     FIND FIRST FACE      ** //
         for (int i=0; i<3; i++)
         {
@@ -219,7 +218,6 @@ public:
                 // If we can't see the final point still, we are done.
                 if ( (CGAL::orientation(p0, p2, p) != direction) )
                 {
-                                        
                     pivots.append(p1);             
                     break;
                                         
@@ -228,12 +226,13 @@ public:
                     
                     pivots.append(p1);                                                     
                     prev = c;
-                    addToWalk(c);
-                    
+                                        
                     if (clockwise)
                         c    = c->neighbor(c->cw(i));
                     else
                         c    = c->neighbor(c->ccw(i)); 
+                        
+                        addToWalk(c);
                         
                     // Change direction.    
                     clockwise = !clockwise;           
@@ -241,13 +240,12 @@ public:
                 }
             } else {
                                 
-                prev = c;
-                addToWalk(c);                
-                
+                prev = c;                
                 if (clockwise)
                     c    = c->neighbor(c->ccw(i));
                 else
                     c    = c->neighbor(c->cw(i));
+                addToWalk(c);                
                     
             }       
             
@@ -345,8 +343,7 @@ public:
         // Loop until we find our destination point.
         for (int j=0; j<100; j++)
         {
-            addToWalk(c);
-
+            addToWalk(c);            
 
             int i = c->index(prev);
 
@@ -399,7 +396,6 @@ public:
             this->incOrientationCount();  	    	
         	if ( orientation(p2,p1,p) == CGAL::POSITIVE ) {  
                 prev = c;            	      
-                addToWalk(c);
                 break;
     	    }
 
