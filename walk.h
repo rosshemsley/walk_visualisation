@@ -40,8 +40,10 @@ class Walk
     
 public:
     // Create a graphics item for drawing this triangulation.
+                                    Walk();
     QGraphicsItemGroup*             getGraphics();    
     int                             getNumTrianglesVisited();
+    int                             getNumOrientationsPerformed();
     
     // Static helper function to draw 2D faces to QgrahpicsItems.
     static QGraphicsPolygonItem*    drawTriangle(Face_handle f,
@@ -51,12 +53,21 @@ public:
 protected:
     // Pointer to the triangluation this walk is on.
     T*                              dt;
-    // List of faces this walk intersects.
-    QList<Face_handle>              faces;
     
     // This allows subclasses to add faces to the current walk. 
     // Doing this enables the base-class functions to work.
     void                            addToWalk(Face_handle f);
+    
+    // A quick and dirty way to count orientations.
+    void                            incOrientationCount();
+    
+    
+private:
+    // List of faces this walk intersects.
+    QList<Face_handle>              faces;
+    
+    int o_count;
+    
 };
 
 /******************************************************************************
@@ -123,9 +134,6 @@ public:
     PivotWalk(Point p, T* dt, Face_handle f=Face_handle())
     {
                 
-        int o_count = 0;
-        int t_count = 0;
-        
         this->dt = dt;
 
         // The user did not provide a face handle. So just use the infinite face.
@@ -143,9 +151,8 @@ public:
             const Point & p0 = c->vertex(i)->point();
             const Point & p1 = c->vertex(c->cw(i))->point();
             
-            o_count ++;
-            t_count++;
-            
+            this->incOrientationCount();    
+                        
             // If we have found a face that can see the point.
             if ( CGAL::orientation(p0,p1,p) == CGAL::POSITIVE )
             {
@@ -155,13 +162,14 @@ public:
         }
         // ** END OF FIND FIRST FACE ** //
 
+        addToWalk(c);
+        
         
         // We swap direction every time we change pivot.
         bool clockwise = TRUE;
 
         while(1)
         {
-            addToWalk(c);
             
             // We need to reverse handedness of orientation tests depending on
             // the directino we are going.   
@@ -195,7 +203,8 @@ public:
             // then either we have arrived (one more orientation) or 
             // we need to jump to the next cell. (go through the remaining
             // face).            
-            o_count++;
+            this->incOrientationCount();    
+            
             if (( CGAL::orientation(p0,p1,p) == direction) )
             {
                 Point p2;
@@ -206,27 +215,21 @@ public:
                 else
                     p2 = c->vertex(c->cw(i))->point();                
                 
-                o_count++;
+                this->incOrientationCount();    
                 // If we can't see the final point still, we are done.
                 if ( (CGAL::orientation(p0, p2, p) != direction) )
                 {
-                    qDebug() << "PIV_WALK:";                    
-                    qDebug() << "Orientation tests: " << o_count;
-                    qDebug() << "Triangles visited: " << t_count;
                                         
-                    addToWalk(c);
                     pivots.append(p1);             
-
                     break;
                                         
                 // New pivot.
                 } else {                    
                     
-                    pivots.append(p1);                                 
+                    pivots.append(p1);                                                     
+                    prev = c;
                     addToWalk(c);
                     
-                    prev = c;
-                    t_count++;
                     if (clockwise)
                         c    = c->neighbor(c->cw(i));
                     else
@@ -237,9 +240,10 @@ public:
                                                  
                 }
             } else {
-                
+                                
                 prev = c;
-                t_count++;
+                addToWalk(c);                
+                
                 if (clockwise)
                     c    = c->neighbor(c->ccw(i));
                 else
@@ -302,9 +306,6 @@ class VisibilityWalk : public Walk<T>
 public:    
     VisibilityWalk(Point p, T* dt, Face_handle f=Face_handle())
     {
-        int o_count =0;
-        int t_count =0;
-        
 
         this->dt = dt;
 
@@ -329,8 +330,7 @@ public:
             const Point & p0 = c->vertex(i       )->point();
             const Point & p1 = c->vertex(c->cw(i))->point();
             
-            o_count ++;
-            t_count++;
+            this->incOrientationCount();    
             
             // If we have found a face that can see the point.
             if ( CGAL::orientation(p0,p1,p) == CGAL::POSITIVE )
@@ -345,7 +345,6 @@ public:
         // Loop until we find our destination point.
         for (int j=0; j<100; j++)
         {
-            t_count++;
             addToWalk(c);
 
 
@@ -357,17 +356,19 @@ public:
 
             int left_first   = coin() % 2;
 
+            // We randomise the order in which we test the 
+            // faces we are walking through
             if (left_first)
             {
                 
-                o_count++;
+                this->incOrientationCount();
             	if ( orientation(p0,p1,p) == CGAL::POSITIVE ) {  
                     prev = c;
                     c = c->neighbor( dt->ccw(i) );  
                     continue;
         	    }                
         	    
-                o_count++;  	    	
+                this->incOrientationCount();
             	if ( orientation(p2,p0,p) == CGAL::POSITIVE ) {  
                     prev = c;            	    
                     c = c->neighbor( dt->cw(i) );  
@@ -376,14 +377,14 @@ public:
         	            	                    
             } else {
                                      	    
-                o_count++;  	    	
+                this->incOrientationCount();
             	if ( orientation(p2,p0,p) == CGAL::POSITIVE ) {  
                     prev = c;            	    
                     c = c->neighbor( dt->cw(i) );  
                     continue;
         	    }
         	            	    
-                o_count++;
+                this->incOrientationCount();
             	if ( orientation(p0,p1,p) == CGAL::POSITIVE ) {  
                     prev = c;            	    
                     c = c->neighbor( dt->ccw(i) );  
@@ -392,24 +393,18 @@ public:
                                 
             }
 
-
-            o_count++;  	    	
+            // If neither of the above tests failed,
+            // then we do one final test to check to see
+            // whether or not we have arrived.
+            this->incOrientationCount();  	    	
         	if ( orientation(p2,p1,p) == CGAL::POSITIVE ) {  
                 prev = c;            	      
-                t_count++;          
                 addToWalk(c);
                 break;
     	    }
 
-
-
-
-
-
         }    
-        qDebug() << "VIS_WALK:";
-        qDebug() << "Orientation tests: " << o_count;
-        qDebug() << "Triangles visited: " << t_count;
+
     }
     
 
@@ -460,6 +455,30 @@ QGraphicsItemGroup* Walk<T>::getGraphics()
     }
 
     return g;
+}
+
+/*****************************************************************************/  
+
+template <typename T>
+void Walk<T>::incOrientationCount()
+{
+    o_count++;
+}
+
+/*****************************************************************************/  
+
+template <typename T>
+Walk<T>::Walk()
+{
+    o_count=0;
+}
+
+/*****************************************************************************/  
+
+template <typename T>
+int Walk<T>::getNumOrientationsPerformed()
+{
+    return o_count;
 }
 
 /*****************************************************************************/  

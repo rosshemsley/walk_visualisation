@@ -67,6 +67,7 @@ private:
     bool                            drawStraightWalk;
     bool                            drawVisibilityWalk;
     QMenu*                          fileMenu;
+    QLabel*                         status;    
     QAction*                        newAct;        
     QGraphicsView*                  view;
     QGraphicsScene*                 scene;    

@@ -74,9 +74,11 @@ void MainWindow::updateScene()
 {
     
     // Style for points.
-    QPen   pen(Qt::blue);
+    QPen   pen(Qt::black);
     QBrush brush(Qt::blue);
     
+    QString details;
+        
     // Remove all the previous walkItems, that is, the previous triangles
     // drawn as part of the walk.
     while (! walkItems.isEmpty() )
@@ -109,32 +111,59 @@ void MainWindow::updateScene()
                 StraightWalk<Delaunay> w(c(points[1]), dt, f);
                 QGraphicsItem* walkGraphics = w.getGraphics();
                 walkItems.append(walkGraphics);
-                scene->addItem(walkGraphics);                                                    
+                scene->addItem(walkGraphics);     
+
+                details += "<b>Straight Walk</b><br>";                
+                details += "Orientations: ";
+                details += QString::number(w.getNumOrientationsPerformed());
+                details += "<br>Triangles Visited: ";
+                details += QString::number(w.getNumTrianglesVisited());
+                details += "<br><br>";
+                
             }
-        
-            if (drawPivotWalk)
-            {
-                PivotWalk<Delaunay> w(c(points[1]), dt, f);
-                QGraphicsItem* walkGraphics = w.getGraphics();
-                walkItems.append(walkGraphics);
-                scene->addItem(walkGraphics);                
-            }     
 
             if (drawVisibilityWalk)
             {
                 VisibilityWalk<Delaunay> w(c(points[1]), dt, f);
                 QGraphicsItem* walkGraphics = w.getGraphics();
                 walkItems.append(walkGraphics);
-                scene->addItem(walkGraphics);                
-            }                       
+                scene->addItem(walkGraphics);   
+
+                details += "<b>Visibility Walk</b><br>";                
+                details += "Orientations: ";
+                details += QString::number(w.getNumOrientationsPerformed());
+                details += "<br>Triangles Visited: ";
+                details += QString::number(w.getNumTrianglesVisited());
+                details += "<br><br>";
+
+            }   
+    
+            if (drawPivotWalk)
+            {
+                PivotWalk<Delaunay> w(c(points[1]), dt, f);
+                QGraphicsItem* walkGraphics = w.getGraphics();
+                walkItems.append(walkGraphics);
+                scene->addItem(walkGraphics);       
+                         
+                details += "<b>Pivot Walk</b><br>";        
+                details += "Orientations: ";
+                details += QString::number(w.getNumOrientationsPerformed());
+                details += "<br>Triangles Visited: ";
+                details += QString::number(w.getNumTrianglesVisited());
+                details += "<br><br>";
+                                         
+            }                                     
         }     
     }
     
+        
     if (inputPoints == 2)
     {
         QPoint p = points[1];
         walkItems.append(scene->addEllipse(QRect(p, QSize(10,10)),pen,brush));        
     }
+    
+    status->setText(details);
 
 }
 
@@ -158,7 +187,7 @@ MainWindow::MainWindow()
     view->installEventFilter(this);
     
     view->setHorizontalScrollBarPolicy ( Qt::ScrollBarAlwaysOff );
-    view->setVerticalScrollBarPolicy ( Qt::ScrollBarAlwaysOff );
+    view->setVerticalScrollBarPolicy   ( Qt::ScrollBarAlwaysOff );
     
     // This allows us to receive events when the mouse moves.
     view->setMouseTracking(true); 
@@ -168,24 +197,31 @@ MainWindow::MainWindow()
    
     view->setRenderHint(QPainter::Antialiasing);
    
-    QGroupBox *groupBox = new QGroupBox(tr("Walk Types"));
+    QGroupBox *groupBox            = new QGroupBox(tr("Walk Types"));
     QCheckBox *checkBox_visibility = new QCheckBox(tr("Visibility Walk"));
-    QCheckBox *checkBox_pivot   = new QCheckBox(tr("Pivot Walk"));
+    QCheckBox *checkBox_pivot      = new QCheckBox(tr("Pivot Walk"));
     QCheckBox *checkBox_straight   = new QCheckBox(tr("Straight Walk"));
 
     QVBoxLayout *vbox = new QVBoxLayout;
-    vbox->addWidget(checkBox_visibility);
-    vbox->addWidget(checkBox_straight);
-    vbox->addWidget(checkBox_pivot);    
+    vbox->addWidget( checkBox_visibility );
+    vbox->addWidget( checkBox_straight   );
+    vbox->addWidget( checkBox_pivot      );    
     groupBox->setLayout(vbox);
 
-    connect(checkBox_pivot,      SIGNAL(stateChanged(int)), this, SLOT(pivotWalk_checkbox_change(int)));
-    connect(checkBox_straight,   SIGNAL(stateChanged(int)), this, SLOT(straightWalk_checkbox_change(int)));
-    connect(checkBox_visibility, SIGNAL(stateChanged(int)), this, SLOT(visibilityWalk_checkbox_change(int)));
+    connect(checkBox_pivot,     SIGNAL(stateChanged(int)), 
+            this,               SLOT(pivotWalk_checkbox_change(int)   ));
+            
+    connect(checkBox_straight,  SIGNAL(stateChanged(int)), 
+            this,               SLOT(straightWalk_checkbox_change(int) ));
+            
+    connect(checkBox_visibility,SIGNAL(stateChanged(int)), 
+            this,               SLOT(visibilityWalk_checkbox_change(int)));
    
    
     drawStraightWalk   = FALSE;
     drawVisibilityWalk = FALSE;
+    drawPivotWalk      = FALSE;
+    
    
     // Container widget for the layout.
     QWidget *widget = new QWidget;
@@ -194,15 +230,20 @@ MainWindow::MainWindow()
     // Upper and lower filler widgets.
     QWidget *topFiller = new QWidget;
     topFiller->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+
+    status = new QLabel;
+    status->setAlignment(Qt::AlignTop);
+    status->setTextFormat(Qt::RichText);
+    //status->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);    
     
-    QWidget *bottomFiller = new QWidget;
-    bottomFiller->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);    
         
-    QVBoxLayout *layout = new QVBoxLayout;
-    layout->setMargin(5);
-   layout->addWidget(groupBox);
-    layout->addWidget(view);
-//    layout->addWidget(bottomFiller);
+    QGridLayout* layout = new QGridLayout;
+        
+    layout->setMargin(5);        
+    layout->addWidget(groupBox,0,0,1,2);
+    layout->addWidget(view,    1,0);
+    layout->addWidget(status,  1,1);    
+    layout->setColumnMinimumWidth(1,150);        
     widget->setLayout(layout);    
         
     createActions();
