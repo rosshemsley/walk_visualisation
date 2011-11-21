@@ -122,9 +122,9 @@ public:
         
     PivotWalk(Point p, T* dt, Face_handle f=Face_handle())
     {
-        
-        int o_count =0;
-        int t_count =0;
+                
+        int o_count = 0;
+        int t_count = 0;
         
         this->dt = dt;
 
@@ -134,14 +134,10 @@ public:
 
         // This is where we store the current face.
         Face_handle c    = f;    
-        Face_handle prev = c;
-        
+        Face_handle prev = c;        
 
-        // we swap direction every time we finish a cell.
-        bool clockwise=TRUE;
 
-        // To start, we find the first face which can see the point
-        // and then walk through it.
+        // **     FIND FIRST FACE      ** //
         for (int i=0; i<3; i++)
         {
             const Point & p0 = c->vertex(i)->point();
@@ -157,19 +153,31 @@ public:
                 break;
             }
         }
+        // ** END OF FIND FIRST FACE ** //
 
+        
+        // We swap direction every time we change pivot.
+        bool clockwise = TRUE;
 
-
-        for (int j=0; j<100; j++)
+        while(1)
         {
             addToWalk(c);
             
-            // Find the index of the previous face relative to us.
-            int i = c->index(prev);
-
-            // Test the orientation of the face ccw/cw of this face depending
-            // on the current direction.
+            // We need to reverse handedness of orientation tests depending on
+            // the directino we are going.   
+            // NOTE. we can avoid several comparisons by unrolling the 
+            // direction changing logic.         
+            CGAL::Orientation direction;
+            if (clockwise)
+                direction = CGAL::NEGATIVE;
+            else
+                direction = CGAL::POSITIVE;            
             
+            // Find the index of the previous face relative to us.
+            // ** NOTE ** To get the cw face we use cw(i). to get 
+            // the cw point (relative to this face) we use ccw(i).
+            int i = c->index(prev);
+                        
             // The first vertex is always the one opposite the previous face.
             const Point & p0 = c->vertex(i)->point();
             
@@ -182,18 +190,11 @@ public:
                 p1 = c->vertex(c->cw(i))->point();
             else
                 p1 = c->vertex(c->ccw(i))->point();            
-            
-            
+                        
             // If we can't keep going in this direction,
             // then either we have arrived (one more orientation) or 
             // we need to jump to the next cell. (go through the remaining
-            // face).
-            CGAL::Orientation direction;
-            if (clockwise)
-                direction = CGAL::NEGATIVE;
-            else
-                direction = CGAL::POSITIVE;
-            
+            // face).            
             o_count++;
             if (( CGAL::orientation(p0,p1,p) == direction) )
             {
@@ -205,7 +206,7 @@ public:
                 else
                     p2 = c->vertex(c->cw(i))->point();                
                 
-                //o_count++;
+                o_count++;
                 // If we can't see the final point still, we are done.
                 if ( (CGAL::orientation(p0, p2, p) != direction) )
                 {
@@ -217,14 +218,13 @@ public:
                     pivots.append(p1);             
 
                     break;
-                    
+                                        
                 // New pivot.
-                } else {
-
+                } else {                    
                     
-                    pivots.append(p1);             
-                    
+                    pivots.append(p1);                                 
                     addToWalk(c);
+                    
                     prev = c;
                     t_count++;
                     if (clockwise)
@@ -232,11 +232,11 @@ public:
                     else
                         c    = c->neighbor(c->ccw(i)); 
                         
-                    clockwise = !clockwise;
-                                        
+                    // Change direction.    
+                    clockwise = !clockwise;           
+                                                 
                 }
             } else {
-
                 
                 prev = c;
                 t_count++;
@@ -313,7 +313,8 @@ public:
             f=dt->infinite_face();
 
         // This is where we store the current face.
-        Face_handle c = f;    
+        Face_handle    c = f;  
+        Face_handle prev = c;  
 
 
         // Create a binary random number generator.
@@ -321,48 +322,89 @@ public:
         boost::uniform_smallint<> two(0, 1);
         boost::variate_generator<boost::rand48&, boost::uniform_smallint<> > coin(rng, two);    
 
-        // Loop until we find our destination point.
-        while(1)
+
+        // **     FIND FIRST FACE      ** //
+        for (int i=0; i<3; i++)
         {
-            if (dt->is_infinite(c)) break;
+            const Point & p0 = c->vertex(i       )->point();
+            const Point & p1 = c->vertex(c->cw(i))->point();
+            
+            o_count ++;
+            t_count++;
+            
+            // If we have found a face that can see the point.
+            if ( CGAL::orientation(p0,p1,p) == CGAL::POSITIVE )
+            {
+                c = c->neighbor(c->ccw(i));
+                break;
+            }
+        }
+        // ** END OF FIND FIRST FACE ** //
+
+
+        // Loop until we find our destination point.
+        for (int j=0; j<100; j++)
+        {
+            t_count++;
+            addToWalk(c);
+
+
+            int i = c->index(prev);
+
+            const Point & p0 = c->vertex( i          )->point();
+            const Point & p1 = c->vertex( dt->cw(i)  )->point();
+            const Point & p2 = c->vertex( dt->ccw(i) )->point();
 
             int left_first   = coin() % 2;
 
-            const Point & p0 = c->vertex( 0 )->point();
-            const Point & p1 = c->vertex( 1 )->point();
-            const Point & p2 = c->vertex( 2 )->point();
+            if (left_first)
+            {
+                
+                o_count++;
+            	if ( orientation(p0,p1,p) == CGAL::POSITIVE ) {  
+                    prev = c;
+                    c = c->neighbor( dt->ccw(i) );  
+                    continue;
+        	    }                
+        	    
+                o_count++;  	    	
+            	if ( orientation(p2,p0,p) == CGAL::POSITIVE ) {  
+                    prev = c;            	    
+                    c = c->neighbor( dt->cw(i) );  
+                    continue;
+        	    }        	    
+        	            	                    
+            } else {
+                                     	    
+                o_count++;  	    	
+            	if ( orientation(p2,p0,p) == CGAL::POSITIVE ) {  
+                    prev = c;            	    
+                    c = c->neighbor( dt->cw(i) );  
+                    continue;
+        	    }
+        	            	    
+                o_count++;
+            	if ( orientation(p0,p1,p) == CGAL::POSITIVE ) {  
+                    prev = c;            	    
+                    c = c->neighbor( dt->ccw(i) );  
+                    continue;
+        	    }        	    
+                                
+            }
 
-            CGAL::Orientation o0, o1, o2;
 
-            o_count++;
-        	o0 = orientation(p0,p1,p);    	    	
-        	if ( o0 == CGAL::NEGATIVE ) {  
-                c = c->neighbor(2);  
+            o_count++;  	    	
+        	if ( orientation(p2,p1,p) == CGAL::POSITIVE ) {  
+                prev = c;            	      
                 t_count++;          
                 addToWalk(c);
-                continue;
+                break;
     	    }
 
-            o_count++;
-        	o0 = orientation(p2,p0,p);    	    	
-        	if ( o0 == CGAL::NEGATIVE ) {  
-                c = c->neighbor(1);      
-                t_count++;                      
-                addToWalk(c);
-                continue;
-    	    }
 
-            o_count++;
-        	o0 = orientation(p1,p2,p);    	    	
-        	if ( o0 == CGAL::NEGATIVE ) {  
-                c = c->neighbor(0);
-                t_count++;
-                addToWalk(c);
-                continue;
-    	    }
 
-    	    // We are done.
-            break;
+
+
 
         }    
         qDebug() << "VIS_WALK:";
