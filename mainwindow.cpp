@@ -92,7 +92,7 @@ void MainWindow::updateScene()
         // Check the face is finite, and then draw it.
         if (!dt->is_infinite(f))
         {        
-            QGraphicsItem *tr = Walk<Delaunay>::drawTriangle(f,QPen(),QColor("#EBD2D2"));
+            QGraphicsItem *tr = Walk<Delaunay>::drawTriangle(f,QPen(),QColor("#D2D2D2"));
             scene->addItem(tr);
             walkItems.append(tr);
         }
@@ -109,7 +109,7 @@ void MainWindow::updateScene()
             if (drawStraightWalk)
             {
                 StraightWalk<Delaunay> w(c(points[1]), dt, f);
-                QGraphicsItem* walkGraphics = w.getGraphics();
+                QGraphicsItem* walkGraphics = w.getGraphics(QPen(),QColor("#EBEBD2"));
                 walkItems.append(walkGraphics);
                 scene->addItem(walkGraphics);     
 
@@ -125,7 +125,7 @@ void MainWindow::updateScene()
             if (drawVisibilityWalk)
             {
                 VisibilityWalk<Delaunay> w(c(points[1]), dt, f);
-                QGraphicsItem* walkGraphics = w.getGraphics();
+                QGraphicsItem* walkGraphics = w.getGraphics(QPen(),QColor("#D2D2EB"));
                 walkItems.append(walkGraphics);
                 scene->addItem(walkGraphics);   
 
@@ -141,7 +141,7 @@ void MainWindow::updateScene()
             if (drawPivotWalk)
             {
                 PivotWalk<Delaunay> w(c(points[1]), dt, f);
-                QGraphicsItem* walkGraphics = w.getGraphics();
+                QGraphicsItem* walkGraphics = w.getGraphics(QPen(),QColor("#EBD2D2"));
                 walkItems.append(walkGraphics);
                 scene->addItem(walkGraphics);       
                          

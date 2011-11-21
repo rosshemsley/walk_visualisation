@@ -41,7 +41,8 @@ class Walk
 public:
     // Create a graphics item for drawing this triangulation.
                                     Walk();
-    QGraphicsItemGroup*             getGraphics();    
+    QGraphicsItemGroup*             getGraphics( QPen       pen   = QPen(),
+                                                 QBrush     brush = QBrush());
     int                             getNumTrianglesVisited();
     int                             getNumOrientationsPerformed();
     
@@ -256,18 +257,18 @@ public:
     /*************************************************************************/
     
     // Overload get graphics to draw the pivots.    
-    QGraphicsItemGroup* getGraphics()
+    QGraphicsItemGroup* getGraphics( QPen pen=QPen(), QBrush brush=QBrush() )
     {
         
         CGAL::Qt::Converter<Gt> c;
         
         // Invoke the base-class drawing method to get
         // the triangles involved.
-        QGraphicsItemGroup* g = Walk<T>::getGraphics();
+        QGraphicsItemGroup* g = Walk<T>::getGraphics(pen,brush);
         
         // The drawing style for the pivots.        
-        QPen   pen(Qt::blue);
-        QBrush brush(Qt::blue);
+        QPen   e_pen(Qt::blue);
+        QBrush e_brush(Qt::blue);
                 
         // Iterate over faces in this walk.
         typename QList<typename T::Point>::const_iterator i;
@@ -276,8 +277,8 @@ public:
             QGraphicsEllipseItem *e = new QGraphicsEllipseItem( QRect(
                                             c(*i).toPoint() + QPoint(-6,-6), 
                                             QSize(12,12)                   ) );
-            e->setBrush(brush);
-            e->setPen(pen);
+            e->setBrush(e_brush);
+            e->setPen(e_pen);
             g->addToGroup(e);
         
         }
@@ -433,7 +434,7 @@ int Walk<T>::getNumTrianglesVisited()
 
 // Create a graphics item representing this walk.
 template <typename T>  
-QGraphicsItemGroup* Walk<T>::getGraphics()
+QGraphicsItemGroup* Walk<T>::getGraphics( QPen pen, QBrush brush )
 {
     // This GraphicsItem Group will store the triangles from the walk.
     QGraphicsItemGroup* g = new QGraphicsItemGroup();
@@ -445,7 +446,7 @@ QGraphicsItemGroup* Walk<T>::getGraphics()
         // Draw this triangle in the walk.
         if (! dt->is_infinite( *i ) ) 
         {
-            QGraphicsPolygonItem *tr=drawTriangle(*i,QPen(),QColor("#D2D2EB"));         
+            QGraphicsPolygonItem *tr = drawTriangle(*i,pen,brush);
             g->addToGroup(tr);        
         }
     }
