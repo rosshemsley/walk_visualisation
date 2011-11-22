@@ -342,7 +342,7 @@ public:
 
 
         // Loop until we find our destination point.
-        for (int j=0; j<100; j++)
+        while (1)
         {
             addToWalk(c);            
 
