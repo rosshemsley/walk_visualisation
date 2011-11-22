@@ -46,16 +46,19 @@ class PointGeneratorDialog : public QDialog
     Q_OBJECT
            
 signals:
+    // We emit this when we have chosen a value.
     void valueChanged(int value);
     
 private slots:
+    // Internal handling of button click.
     void buttonClicked()
     {
-        emit valueChanged( text_numPoints->text().toInt() );
+        emit valueChanged( spin_numPoints->value() );
+        this->hide();
     }
     
 private:
-    QLineEdit*   text_numPoints;
+    QSpinBox*    spin_numPoints;
     QPushButton* button_create;
     QLabel*      label_info;    
     QGridLayout* layout;    
@@ -63,28 +66,31 @@ private:
 public:
     void show()
     {
-        text_numPoints->clear();
+        spin_numPoints->setValue(100);
         QDialog::show();
     }
     
     PointGeneratorDialog()
     {
-        
+        // Set up the input form.
         layout = new QGridLayout;
-
         label_info     = new QLabel(tr("Number of points to add"));
-        text_numPoints = new QLineEdit();
+        spin_numPoints = new QSpinBox();
         button_create  = new QPushButton(tr("Generate"));
-        
-        text_numPoints->setInputMask("9999999999");
-
         layout->addWidget(label_info,    0,0,1,2);
-        layout->addWidget(text_numPoints,1,0);
+        layout->addWidget(spin_numPoints,1,0);
         layout->addWidget(button_create, 1,1);
-
+        
+        // Minimum size of the random pointset.
+        spin_numPoints->setMinimum(1);
+        spin_numPoints->setMaximum(999999);
+        spin_numPoints->setSingleStep(10);
+        
+                
         this->setWindowTitle(tr("Generate points."));
         this->setLayout(layout);
-                
+        
+        // Connect button to the buttonClicked slot.        
         connect(button_create, SIGNAL(clicked()), this, SLOT(buttonClicked()));
     }
 };
@@ -110,12 +116,12 @@ private slots:
     void                            visibilityWalk_checkbox_change(int state);
     void                            pivotWalk_checkbox_change(int state);
 
-
+public slots:    
+    void                            randomTriangulation(int points);    
+    
 private:
     void                            createMenus();
     void                            createActions();    
-    void                            randomTriangulation(int points);    
-
     bool                            drawPivotWalk;
     bool                            drawStraightWalk;
     bool                            drawVisibilityWalk;

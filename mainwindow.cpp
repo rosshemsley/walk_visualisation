@@ -72,7 +72,7 @@ void MainWindow::pivotWalk_checkbox_change(int state)
 
 void MainWindow::updateScene()
 {
-    
+        
     // Style for points.
     QPen   pen(Qt::black);
     QBrush brush(Qt::blue);
@@ -125,7 +125,8 @@ void MainWindow::updateScene()
             if (drawVisibilityWalk)
             {
                 VisibilityWalk<Delaunay> w(c(points[1]), dt, f);
-                QGraphicsItem* walkGraphics = w.getGraphics(QPen(),QColor("#D2D2EB"));
+                QGraphicsItem* walkGraphics = w.getGraphics(QPen(),
+                                                            QColor("#D2D2EB"));
                 walkItems.append(walkGraphics);
                 scene->addItem(walkGraphics);   
 
@@ -141,7 +142,8 @@ void MainWindow::updateScene()
             if (drawPivotWalk)
             {
                 PivotWalk<Delaunay> w(c(points[1]), dt, f);
-                QGraphicsItem* walkGraphics = w.getGraphics(QPen(),QColor("#EBD2D2"));
+                QGraphicsItem* walkGraphics = w.getGraphics(QPen(),
+                                                            QColor("#EBD2D2"));
                 walkItems.append(walkGraphics);
                 scene->addItem(walkGraphics);       
                          
@@ -164,6 +166,8 @@ void MainWindow::updateScene()
     }
     
     status->setText(details);
+    
+    
 
 }
 
@@ -269,11 +273,12 @@ MainWindow::MainWindow()
     createActions();
     createMenus();
 
-    QString message = tr("A context menu is available by right-clicking");
+    QString message = tr("Select the walks to draw and then click New Walk.");
     statusBar()->showMessage(message);    
 
     dialog_newPointset = new PointGeneratorDialog();
 
+    connect(dialog_newPointset, SIGNAL(valueChanged(int)), this, SLOT(randomTriangulation(int)));
 
 
     // Create and draw a random triangulation to the graphics view.
@@ -386,7 +391,10 @@ void MainWindow::randomTriangulation(int points)
     CGAL::copy_n( g, points, std::back_inserter(*dt) );
 
     emit tgi->modelChanged();
-
+   
+    // Clear old walk.
+    inputPoints=-1;
+    updateScene();
 
     view->setSceneRect(tgi->boundingRect());
     view->fitInView(tgi->boundingRect(), Qt::KeepAspectRatio);

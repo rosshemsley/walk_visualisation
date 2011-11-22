@@ -1,16 +1,28 @@
 *******************************************************************************
-*	Walk Visualisation                                                        
+* Walk Visualisation                                                        
 *******************************************************************************
 
-A C++ application based on Qt 4 and CGAL to visualise and compare walks on
-triangulations.
+	A C++ application based on Qt 4 and CGAL to visualise and compare walks on
+	triangulations.
 
 *******************************************************************************
+* About
+*******************************************************************************
 
-Written by:             Ross Hemsley
-E-mail:                 ross.hemsley (at) inria.fr
-Blog of current work:   http://rosshemsley.co.uk
+	Written by:             Ross Hemsley
+	E-mail:                 ross.hemsley (at) inria.fr
+	Blog of current work:   http://rosshemsley.co.uk
 
 *******************************************************************************
-*	Last Updated: 10/11/11                                           
+* Compiling
+*******************************************************************************
+
+	This program requires Qt4, CGAL and cmake.
+
+	$ cmake .
+	$ make
+
+
+*******************************************************************************
+*	Readme last updated: 22/11/11                                           
 *******************************************************************************
