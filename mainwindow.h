@@ -37,6 +37,58 @@ typedef Face::Face_handle                               Face_handle;
 typedef CGAL::Creator_uniform_2<double,Point>           Creator;
 typedef CGAL::Qt::TriangulationGraphicsItem<Delaunay>   QTriangulationGraphics;
 
+
+/*****************************************************************************/
+// Dialog to allow a new random pointset to be generated.
+
+class PointGeneratorDialog : public QDialog
+{
+    Q_OBJECT
+           
+signals:
+    void valueChanged(int value);
+    
+private slots:
+    void buttonClicked()
+    {
+        emit valueChanged( text_numPoints->text().toInt() );
+    }
+    
+private:
+    QLineEdit*   text_numPoints;
+    QPushButton* button_create;
+    QLabel*      label_info;    
+    QGridLayout* layout;    
+    
+public:
+    void show()
+    {
+        text_numPoints->clear();
+        QDialog::show();
+    }
+    
+    PointGeneratorDialog()
+    {
+        
+        layout = new QGridLayout;
+
+        label_info     = new QLabel(tr("Number of points to add"));
+        text_numPoints = new QLineEdit();
+        button_create  = new QPushButton(tr("Generate"));
+        
+        text_numPoints->setInputMask("9999999999");
+
+        layout->addWidget(label_info,    0,0,1,2);
+        layout->addWidget(text_numPoints,1,0);
+        layout->addWidget(button_create, 1,1);
+
+        this->setWindowTitle(tr("Generate points."));
+        this->setLayout(layout);
+                
+        connect(button_create, SIGNAL(clicked()), this, SLOT(buttonClicked()));
+    }
+};
+
 /*****************************************************************************/
 
 class MainWindow : public QMainWindow
@@ -51,7 +103,8 @@ protected:
     void                            resizeEvent (QResizeEvent * event);
 
 private slots:
-    void                            newWalk();    
+    void                            newWalk();   
+    void                            newPointset(); 
     void                            updateScene();
     void                            straightWalk_checkbox_change(int state);
     void                            visibilityWalk_checkbox_change(int state);
@@ -61,11 +114,12 @@ private slots:
 private:
     void                            createMenus();
     void                            createActions();    
-    void                            randomTriangulation();    
+    void                            randomTriangulation(int points);    
 
     bool                            drawPivotWalk;
     bool                            drawStraightWalk;
     bool                            drawVisibilityWalk;
+    PointGeneratorDialog*           dialog_newPointset;
     QMenu*                          fileMenu;
     QLabel*                         status;    
     QAction*                        newAct;        
@@ -83,6 +137,7 @@ private:
     QPoint                          points[2];
 
 }; 
+
 
 /*****************************************************************************/
 

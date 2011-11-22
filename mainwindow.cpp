@@ -172,7 +172,15 @@ void MainWindow::updateScene()
 MainWindow::MainWindow()
 {
     
-    dt=new Delaunay();
+    dt  = new Delaunay();
+    tgi = new QTriangulationGraphics(dt);
+    
+    tgi->setVerticesPen(QPen(Qt::red, 5 , Qt::SolidLine, 
+                                          Qt::RoundCap, 
+                                          Qt::RoundJoin ));
+
+    
+    
     
     // The default state is to not take new input points.
     inputPoints = -1;
@@ -186,6 +194,8 @@ MainWindow::MainWindow()
     scene->installEventFilter(this);    
     view->installEventFilter(this);
     
+    scene->addItem(tgi);    
+    
     view->setHorizontalScrollBarPolicy ( Qt::ScrollBarAlwaysOff );
     view->setVerticalScrollBarPolicy   ( Qt::ScrollBarAlwaysOff );
     
@@ -197,17 +207,27 @@ MainWindow::MainWindow()
    
     view->setRenderHint(QPainter::Antialiasing);
    
-    QGroupBox *groupBox            = new QGroupBox(tr("Walk Types"));
-    QCheckBox *checkBox_visibility = new QCheckBox(tr("Visibility Walk"));
-    QCheckBox *checkBox_pivot      = new QCheckBox(tr("Pivot Walk"));
-    QCheckBox *checkBox_straight   = new QCheckBox(tr("Straight Walk"));
+    QGroupBox    *groupBox            = new QGroupBox(tr("Walk Types"));
+    QCheckBox    *checkBox_visibility = new QCheckBox(tr("Visibility Walk"));
+    QCheckBox    *checkBox_pivot      = new QCheckBox(tr("Pivot Walk"));
+    QCheckBox    *checkBox_straight   = new QCheckBox(tr("Straight Walk"));
+    QPushButton  *button_new_walk     = new QPushButton(tr("New Walk"));
+    QPushButton  *button_new_pointset = new QPushButton(tr("New Pointset"));
 
-    QVBoxLayout *vbox = new QVBoxLayout;
-    vbox->addWidget( checkBox_visibility );
-    vbox->addWidget( checkBox_straight   );
-    vbox->addWidget( checkBox_pivot      );    
-    groupBox->setLayout(vbox);
+    QHBoxLayout *hbox = new QHBoxLayout;
+    hbox->addWidget( button_new_walk     );
+    hbox->addWidget( button_new_pointset );
+    hbox->addWidget( checkBox_visibility );
+    hbox->addWidget( checkBox_straight   );
+    hbox->addWidget( checkBox_pivot      );    
+    groupBox->setLayout(hbox);
 
+    connect(button_new_walk,        SIGNAL(clicked()),
+            this,                   SLOT(newWalk()                    ));
+
+    connect(button_new_pointset,    SIGNAL(clicked()),
+            this,                   SLOT(newPointset()                ));
+    
     connect(checkBox_pivot,     SIGNAL(stateChanged(int)), 
             this,               SLOT(pivotWalk_checkbox_change(int)   ));
             
@@ -252,8 +272,12 @@ MainWindow::MainWindow()
     QString message = tr("A context menu is available by right-clicking");
     statusBar()->showMessage(message);    
 
+    dialog_newPointset = new PointGeneratorDialog();
+
+
+
     // Create and draw a random triangulation to the graphics view.
-    randomTriangulation();    
+    randomTriangulation(100);    
 }
 
 /*****************************************************************************/
@@ -328,6 +352,14 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event)
 
 /*****************************************************************************/
 
+void MainWindow::newPointset()
+{     
+    dialog_newPointset->show();
+}
+
+
+/*****************************************************************************/
+
 void MainWindow::createMenus()
 {
     fileMenu = menuBar()->addMenu(tr("&File"));
@@ -345,22 +377,20 @@ void MainWindow::createActions()
 
 /*****************************************************************************/
 
-void MainWindow::randomTriangulation()
+void MainWindow::randomTriangulation(int points)
 {   
+    dt->clear();
 
     // Generate a random pointset to triangulate.
     CGAL::Random_points_in_square_2<Point,Creator> g(400.);
-    CGAL::copy_n( g, 100, std::back_inserter(*dt) );
+    CGAL::copy_n( g, points, std::back_inserter(*dt) );
 
-    // Create a triangulation and add to the scene
-    tgi = new QTriangulationGraphics(dt);
-    tgi->setVerticesPen(QPen(Qt::red, 5 , Qt::SolidLine, 
-                                          Qt::RoundCap, 
-                                          Qt::RoundJoin ));
-    scene->addItem(tgi);
+    emit tgi->modelChanged();
+
 
     view->setSceneRect(tgi->boundingRect());
     view->fitInView(tgi->boundingRect(), Qt::KeepAspectRatio);
+    
     
 }
 
