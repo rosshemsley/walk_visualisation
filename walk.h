@@ -134,7 +134,10 @@ public:
         
     PivotWalk(Point p, T* dt, Face_handle f=Face_handle())
     {
-                
+        
+        
+        bool new_pivot = true;
+        
         this->dt = dt;
 
         // The user did not provide a face handle. So just use the infinite face.
@@ -143,7 +146,8 @@ public:
 
         // This is where we store the current face.
         Face_handle c    = f;    
-        Face_handle prev = c;        
+        Face_handle prev = c;    
+        Face_handle source;    
 
         // **     FIND FIRST FACE      ** //
         for (int i=0; i<3; i++)
@@ -164,12 +168,22 @@ public:
 
         addToWalk(c);
         
+
+        
         
         // We swap direction every time we change pivot.
         bool clockwise = TRUE;
 
-        while(1)
+        for (int x = 0; x<100; x++)
         {
+            qDebug() << "\n\nStarting new Triangle";
+            if (clockwise)
+                qDebug() << "Going Clockwise";
+            else 
+                qDebug() << "Going CounterClockwise";
+            
+            if (c == source)
+                break;
             
             // We need to reverse handedness of orientation tests depending on
             // the directino we are going.   
@@ -205,8 +219,23 @@ public:
             // face).            
             this->incOrientationCount();    
             
+            
             if (( CGAL::orientation(p0,p1,p) == direction) )
             {
+                qDebug() << "Failed orientation";
+                // The first test has failed. Let's just try going in the opposite direction.
+                if (new_pivot)
+                {
+                    qDebug() << "But we are in new pivot, so trying other direction...";
+                    if (clockwise)
+                        prev = c->neighbor(c->ccw(i));
+                    else
+                        prev = c->neighbor(c->cw(i));                    
+                        
+                    clockwise=!clockwise;
+                    continue;
+                }
+                qDebug() << "Testing remaining point to see if we are done";
                 Point p2;
                 
                 // The remaining point.
@@ -215,31 +244,55 @@ public:
                 else
                     p2 = c->vertex(c->cw(i))->point();                
                 
+                
+                
                 this->incOrientationCount();    
                 // If we can't see the final point still, we are done.
-                if ( (CGAL::orientation(p0, p2, p) != direction) )
+                if ((CGAL::orientation(p0, p2, p) !=  direction) )
                 {
+                    qDebug() << "we are done";
                     pivots.append(p1);             
-                    break;
-                                        
+                    break;                                    
+                }                  
                 // New pivot.
-                } else {                    
+                qDebug() << "Generating new Pivot";
+                new_pivot=true;
                     
                     pivots.append(p1);                                                     
+ 
                     prev = c;
+                    Face_handle tmp = prev;
+                    
                                         
                     if (clockwise)
-                        c    = c->neighbor(c->cw(i));
-                    else
-                        c    = c->neighbor(c->ccw(i)); 
+                    {
                         
-                        addToWalk(c);
+                        c    = c->neighbor(c->cw(i));                                                                    
+                        prev = c->neighbor(c->cw(c->index(prev)));
+                        
+         
+                        
+                    } else {
+                        c    = c->neighbor(c->ccw(i));                         
+                        prev = c->neighbor(c->ccw(c->index(prev)));                        
+                    }
+
+                    source = prev;
+                    
+                    
+                    
+                        
+                    
+                    addToWalk(c);
                         
                     // Change direction.    
                     clockwise = !clockwise;           
-                                                 
-                }
+                 
             } else {
+                
+                qDebug() <<"Continuing around...";
+                
+                new_pivot=false;
                                 
                 prev = c;                
                 if (clockwise)
@@ -343,7 +396,7 @@ public:
 
         // Loop until we find our destination point.
         while (1)
-        {
+        { 
             addToWalk(c);            
 
             int i = c->index(prev);
