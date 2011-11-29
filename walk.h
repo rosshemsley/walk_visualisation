@@ -59,8 +59,7 @@ protected:
     // Doing this enables the base-class functions to work.
     void                            addToWalk(Face_handle f);
     
-    // A quick and dirty way to count orientations.
-    void                            incOrientationCount();
+    CGAL::Orientation               orientation(Point p, Point q, Point r);    
     
     
 private:
@@ -135,6 +134,7 @@ public:
     PivotWalk(Point p, T* dt, Face_handle f=Face_handle())
     {
         
+        qDebug() << "\n\n NEW WALK";
         
         bool new_pivot = true;
         
@@ -153,11 +153,9 @@ public:
         {
             const Point & p0 = c->vertex(i)->point();
             const Point & p1 = c->vertex(c->cw(i))->point();
-            
-            this->incOrientationCount();    
-                        
+                                    
             // If we have found a face that can see the point.
-            if ( CGAL::orientation(p0,p1,p) == CGAL::POSITIVE )
+            if ( orientation(p0,p1,p) == CGAL::POSITIVE )
             {
                 c    = c->neighbor(c->ccw(i));
                 break;
@@ -185,7 +183,6 @@ public:
             // Pivot point.
             const Point & p_pivot = c->vertex(i)->point();
             
-            pivots.append(p_pivot);             
             
             
             // Point linking the pivot to the clockwise face.
@@ -199,19 +196,21 @@ public:
             
             if (clockwise)
             {
+                
                 // If visibility does hold in this direction, continue walking around this point
-                if ( CGAL::orientation(p_pivot, p_cw, p) == CGAL::RIGHT_TURN )
+                if ( orientation(p_pivot, p_cw, p) == CGAL::RIGHT_TURN )
                 {
                     prev = c;
                     c    = c->neighbor(c->cw(i));
                 }
 
                 // If visibility does hold in this direction, continue walking around this point
-                else if ( CGAL::orientation(p_pivot, p_ccw, p) == CGAL::LEFT_TURN )
+                else if ( orientation(p_pivot, p_ccw, p) == CGAL::LEFT_TURN )
                 {
                     prev = c;
                     c    = c->neighbor(c->ccw(i));
                     
+                    qDebug() <<  "EXTRA TEST";                    
                     // Swap the direction.
                     clockwise = !clockwise;
                 }
@@ -226,18 +225,19 @@ public:
             } else { // SAME BUT ORDER REVERSED //
                                 
                 // If visibility does hold in this direction, continue walking around this point
-                if ( CGAL::orientation(p_pivot, p_ccw, p) == CGAL::LEFT_TURN )
+                if ( orientation(p_pivot, p_ccw, p) == CGAL::LEFT_TURN )
                 {
                     prev = c;
                     c    = c->neighbor(c->ccw(i));
                 }
                                 
                 // If visibility does hold in this direction, continue walking around this point
-                else if ( CGAL::orientation(p_pivot, p_cw, p) == CGAL::RIGHT_TURN )
+                else if ( orientation(p_pivot, p_cw, p) == CGAL::RIGHT_TURN )
                 {
                     prev = c;
                     c    = c->neighbor(c->cw(i));
 
+                    qDebug() <<  "EXTRA TEST";
                     // Swap the direction.
                     clockwise = !clockwise;                                                            
                 }
@@ -249,10 +249,13 @@ public:
                     break;
                 }              
             }
+            
+            pivots.append(p_pivot);             
+            
             addToWalk(c);            
             
             
-            qDebug() << "Starting going around cell";
+            qDebug() << "\nStarting going around cell";
             
             // We should now be going in a good direction in the cell about some pivot point p_pivot.
             // We continue in the direction given by clockwise until we meet the first edge that is going in the wrong direction
@@ -273,7 +276,7 @@ public:
                     const Point & p_current = c->vertex(i)->point();
                     
                     // If we can see the point through this edge
-                    if ( CGAL::orientation(p_pivot, p_current, p) == CGAL::RIGHT_TURN )
+                    if ( orientation(p_pivot, p_current, p) == CGAL::RIGHT_TURN )
                     {
                         // continue in this direction.
                         prev = c;
@@ -283,7 +286,7 @@ public:
                         // We have reached the sink node. Check to see if the point
                         // is contained. If not then start from the beginning.
                         const Point & p_final = c->vertex(c->ccw(i))->point();
-                        if ( CGAL::orientation(p_current, p_final, p) == CGAL::LEFT_TURN )                        
+                        if ( orientation(p_current, p_final, p) == CGAL::LEFT_TURN )                        
                         {
                             // We are done;
                             done = true;
@@ -294,8 +297,9 @@ public:
                             // Start a new cell.
                             prev = c;
                             c    = c->neighbor(c->cw(i));
-                            break;
                             clockwise = !clockwise;
+                            break;
+                            
                         }
                     }
                     
@@ -305,7 +309,7 @@ public:
                         const Point & p_current = c->vertex(i)->point();
 
                         // If we can see the point through this edge
-                        if ( CGAL::orientation(p_pivot, p_current, p) == CGAL::LEFT_TURN )
+                        if ( orientation(p_pivot, p_current, p) == CGAL::LEFT_TURN )
                         {
                             // continue in this direction.
                             prev = c;
@@ -315,7 +319,7 @@ public:
                             // We have reached the sink node. Check to see if the point
                             // is contained. If not then start from the beginning.
                             const Point & p_final = c->vertex(c->cw(i))->point();
-                            if ( CGAL::orientation(p_current, p_final, p) == CGAL::RIGHT_TURN )                        
+                            if (0)// orientation(p_current, p_final, p) == CGAL::RIGHT_TURN )                        
                             {
                                 // We are done;
                                 done = true;
@@ -325,8 +329,9 @@ public:
                                 // Start a new cell.
                                 prev = c;
                                 c    = c->neighbor(c->ccw(i));
-                                break;
                                 clockwise = !clockwise;
+                                break;
+                                
                             }
                             
                         }
@@ -364,7 +369,7 @@ public:
             // the directino we are going.   
             // NOTE. we can avoid several comparisons by unrolling the 
             // direction changing logic.         
-            CGAL::Orientation direction;
+            orientation direction;
             if (clockwise)
                 direction = CGAL::NEGATIVE;
             else
@@ -395,7 +400,7 @@ public:
             this->incOrientationCount();    
             
             
-            if (( CGAL::orientation(p0,p1,p) == direction) )
+            if (( orientation(p0,p1,p) == direction) )
             {
                 qDebug() << "Failed orientation";
                 // The first test has failed. Let's just try going in the opposite direction.
@@ -423,7 +428,7 @@ public:
                 
                 this->incOrientationCount();    
                 // If we can't see the final point still, we are done.
-                if ((CGAL::orientation(p0, p2, p) !=  direction) )
+                if ((orientation(p0, p2, p) !=  direction) )
                 {
                     qDebug() << "we are done";
                     pivots.append(p1);             
@@ -559,10 +564,9 @@ public:
             const Point & p0 = c->vertex(i       )->point();
             const Point & p1 = c->vertex(c->cw(i))->point();
             
-            this->incOrientationCount();    
             
             // If we have found a face that can see the point.
-            if ( CGAL::orientation(p0,p1,p) == CGAL::POSITIVE )
+            if ( orientation(p0,p1,p) == CGAL::POSITIVE )
             {
                 c = c->neighbor(c->ccw(i));
                 break;
@@ -589,14 +593,12 @@ public:
             if (left_first)
             {
                 
-                this->incOrientationCount();
             	if ( orientation(p0,p1,p) == CGAL::POSITIVE ) {  
                     prev = c;
                     c = c->neighbor( dt->ccw(i) );  
                     continue;
         	    }                
         	    
-                this->incOrientationCount();
             	if ( orientation(p2,p0,p) == CGAL::POSITIVE ) {  
                     prev = c;            	    
                     c = c->neighbor( dt->cw(i) );  
@@ -605,14 +607,12 @@ public:
         	            	                    
             } else {
                                      	    
-                this->incOrientationCount();
             	if ( orientation(p2,p0,p) == CGAL::POSITIVE ) {  
                     prev = c;            	    
                     c = c->neighbor( dt->cw(i) );  
                     continue;
         	    }
         	            	    
-                this->incOrientationCount();
             	if ( orientation(p0,p1,p) == CGAL::POSITIVE ) {  
                     prev = c;            	    
                     c = c->neighbor( dt->ccw(i) );  
@@ -624,7 +624,6 @@ public:
             // If neither of the above tests failed,
             // then we do one final test to check to see
             // whether or not we have arrived.
-            this->incOrientationCount();  	    	
         	if ( orientation(p2,p1,p) == CGAL::POSITIVE ) {  
                 prev = c;            	      
                 break;
@@ -644,6 +643,16 @@ public:
 * so that we do not have to re-implement this functionality multiple times.
 *
 ******************************************************************************/
+
+template <typename T>  
+CGAL::Orientation Walk<T>::orientation(Point p, Point q, Point r)
+{
+    o_count++;
+    
+    return CGAL::orientation(p,q,r);
+    
+}
+
 
 template <typename T>  
 void Walk<T>::addToWalk(Face_handle f)
@@ -682,14 +691,6 @@ QGraphicsItemGroup* Walk<T>::getGraphics( QPen pen, QBrush brush )
     }
 
     return g;
-}
-
-/*****************************************************************************/  
-
-template <typename T>
-void Walk<T>::incOrientationCount()
-{
-    o_count++;
 }
 
 /*****************************************************************************/  
