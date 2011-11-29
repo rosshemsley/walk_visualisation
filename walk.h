@@ -147,8 +147,7 @@ public:
         // This is where we store the current face.
         Face_handle c    = f;    
         Face_handle prev = c;    
-        Face_handle source;    
-
+        
         // **     FIND FIRST FACE      ** //
         for (int i=0; i<3; i++)
         {
@@ -160,16 +159,192 @@ public:
             // If we have found a face that can see the point.
             if ( CGAL::orientation(p0,p1,p) == CGAL::POSITIVE )
             {
-                c = c->neighbor(c->ccw(i));
+                c    = c->neighbor(c->ccw(i));
                 break;
             }
         }
         // ** END OF FIND FIRST FACE ** //
 
-        addToWalk(c);
-        
 
         
+        bool clockwise = TRUE;
+        
+
+        for (int x=0; x<100; x++)
+        {
+            addToWalk(c);
+            
+            // Assume we have just walked into a new cell. The first thing to do is decide a direction.
+            
+            // This is the index of the sink of the last cell relative to the current triangle.
+            int i = c->index(prev);
+            
+            // First thing to do is choose a direction. We use the value of clockwise to decide this. 
+            // But may have to swap depending on the configuation of the points.
+            
+            // Pivot point.
+            const Point & p_pivot = c->vertex(i)->point();
+            
+            pivots.append(p_pivot);             
+            
+            
+            // Point linking the pivot to the clockwise face.
+            // ** Note ** cw and ccw are reversed when we are converting between 
+            // a face index and a point index.
+            const Point & p_cw = c->vertex(c->ccw(i))->point();
+            
+            // Point linking the pivot to the counter-clockwise face.
+            const Point & p_ccw = c->vertex(c->cw(i))->point();
+            
+            
+            if (clockwise)
+            {
+                // If visibility does hold in this direction, continue walking around this point
+                if ( CGAL::orientation(p_pivot, p_cw, p) == CGAL::RIGHT_TURN )
+                {
+                    prev = c;
+                    c    = c->neighbor(c->cw(i));
+                }
+
+                // If visibility does hold in this direction, continue walking around this point
+                else if ( CGAL::orientation(p_pivot, p_ccw, p) == CGAL::LEFT_TURN )
+                {
+                    prev = c;
+                    c    = c->neighbor(c->ccw(i));
+                    
+                    // Swap the direction.
+                    clockwise = !clockwise;
+                }
+                
+                // If both of the above tests failed, then we know that the point is here.
+                else 
+                {
+                    qDebug () << "Found at start";
+                    break;
+                }
+              
+            } else { // SAME BUT ORDER REVERSED //
+                                
+                // If visibility does hold in this direction, continue walking around this point
+                if ( CGAL::orientation(p_pivot, p_ccw, p) == CGAL::LEFT_TURN )
+                {
+                    prev = c;
+                    c    = c->neighbor(c->ccw(i));
+                }
+                                
+                // If visibility does hold in this direction, continue walking around this point
+                else if ( CGAL::orientation(p_pivot, p_cw, p) == CGAL::RIGHT_TURN )
+                {
+                    prev = c;
+                    c    = c->neighbor(c->cw(i));
+
+                    // Swap the direction.
+                    clockwise = !clockwise;                                                            
+                }
+                
+                // If both of the above tests failed, then we know that the point is here.
+                else 
+                {
+                    qDebug () << "Found at start";
+                    break;
+                }              
+            }
+            addToWalk(c);            
+            
+            
+            qDebug() << "Starting going around cell";
+            
+            // We should now be going in a good direction in the cell about some pivot point p_pivot.
+            // We continue in the direction given by clockwise until we meet the first edge that is going in the wrong direction
+            // When we meet this we have to test to see if the point is contained within this sink node, and then 
+            // we go again from the start of the loop if it is not.
+            bool done = false;
+            
+            for (int y=0; y<100; y++)
+            {
+                // Index of the previous triangle relative to the current triangle.
+                i = c->index(prev);
+                
+
+                
+                if (clockwise)               
+                { 
+                    // This is the point on the edge that we are going to test.
+                    const Point & p_current = c->vertex(i)->point();
+                    
+                    // If we can see the point through this edge
+                    if ( CGAL::orientation(p_pivot, p_current, p) == CGAL::RIGHT_TURN )
+                    {
+                        // continue in this direction.
+                        prev = c;
+                        c    = c->neighbor(c->ccw(i));
+                        
+                    } else {
+                        // We have reached the sink node. Check to see if the point
+                        // is contained. If not then start from the beginning.
+                        const Point & p_final = c->vertex(c->ccw(i))->point();
+                        if ( CGAL::orientation(p_current, p_final, p) == CGAL::LEFT_TURN )                        
+                        {
+                            // We are done;
+                            done = true;
+                            qDebug () << "Found at end";                            
+                            break;
+                            
+                        } else {
+                            // Start a new cell.
+                            prev = c;
+                            c    = c->neighbor(c->cw(i));
+                            break;
+                            clockwise = !clockwise;
+                        }
+                    }
+                    
+                } else {
+                    
+                     // This is the point on the edge that we are going to test.
+                        const Point & p_current = c->vertex(i)->point();
+
+                        // If we can see the point through this edge
+                        if ( CGAL::orientation(p_pivot, p_current, p) == CGAL::LEFT_TURN )
+                        {
+                            // continue in this direction.
+                            prev = c;
+                            c    = c->neighbor(c->cw(i));
+
+                        } else {
+                            // We have reached the sink node. Check to see if the point
+                            // is contained. If not then start from the beginning.
+                            const Point & p_final = c->vertex(c->cw(i))->point();
+                            if ( CGAL::orientation(p_current, p_final, p) == CGAL::RIGHT_TURN )                        
+                            {
+                                // We are done;
+                                done = true;
+                                qDebug () << "Found at end";                                
+                                break;
+                            } else {
+                                // Start a new cell.
+                                prev = c;
+                                c    = c->neighbor(c->ccw(i));
+                                break;
+                                clockwise = !clockwise;
+                            }
+                            
+                        }
+                        
+                }
+                
+                addToWalk(c);            
+                
+            }
+            
+            
+            if (done) 
+                break;            
+            
+        }
+        
+
+        /*
         
         // We swap direction every time we change pivot.
         bool clockwise = TRUE;
@@ -305,6 +480,8 @@ public:
             
                                 
         }
+        
+        */
     }
     
     /*************************************************************************/
