@@ -286,6 +286,7 @@ public:
             // This is where we would have gone if the first test failed!
             Face_handle omitted_next;
             Point       p_omitted;
+            Point       p_omitted_final;
 
             for (int y=0; y<100; y++)
             {
@@ -305,6 +306,7 @@ public:
                         // We might need to come back to this test.
                         omitted_next = c->neighbor(c->cw(i));          
                         p_omitted    = p_current; 
+                        p_omitted_final = c->vertex(c->ccw(i))->point();                        
                         prev = c;
                         c    = c->neighbor(c->ccw(i));                                 
                     }
@@ -329,6 +331,16 @@ public:
                             {
                                 qDebug() << "Had to backtrack";
                                 or_lost++;
+                                
+                                if (orientation(p_current, p_omitted_final, p) == CGAL::LEFT_TURN )                        
+                                {
+                                    // We are done;
+                                    done = true;
+                                    qDebug () << "Found at end";                            
+                                    break;
+                                }
+                                
+                                
                                 // go backwards.
                                 c         = omitted_next;
                                 clockwise = !clockwise;
@@ -368,6 +380,7 @@ public:
                             // We might need to come back to this test.
                             omitted_next = c->neighbor(c->ccw(i));          
                             p_omitted    = p_current;
+                            p_omitted_final = c->vertex(c->cw(i))->point();
                             prev = c;
                             c    = c->neighbor(c->cw(i));
 
@@ -385,6 +398,16 @@ public:
                                 if (orientation(p_pivot, p_omitted, p) == CGAL::RIGHT_TURN)
                                 {
                                     or_lost++;
+                                    
+                                    
+                                    if (orientation(p_current, p_omitted_final, p) == CGAL::RIGHT_TURN )                        
+                                    {
+                                        // We are done;
+                                        done = true;
+                                        qDebug () << "Found at end";                            
+                                        break;
+                                    }
+                                    
                                     
                                     qDebug() << "Had to backtrack";
                                     // go backwards.
