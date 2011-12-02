@@ -134,6 +134,9 @@ public:
     PivotWalk(Point p, T* dt, Face_handle f=Face_handle())
     {
         
+        int pivots_passed     = 0;
+        int triangles_visited = 0;
+        
         qDebug() << "\n\n NEW WALK";
         
         bool new_pivot = true;
@@ -198,7 +201,7 @@ public:
             {
                 
                 // If visibility does hold in this direction, continue walking around this point
-                if ( orientation(p_pivot, p_cw, p) == CGAL::RIGHT_TURN )
+                if (orientation(p_pivot, p_cw, p) == CGAL::RIGHT_TURN )
                 {
                     prev = c;
                     c    = c->neighbor(c->cw(i));
@@ -263,30 +266,66 @@ public:
             // we go again from the start of the loop if it is not.
             bool done = false;
             
+            
+            
+            pivots_passed++;
+
+            // This is where we would have gone if the first test failed!
+            Face_handle omitted_next;
+            Point       p_omitted;
+
             for (int y=0; y<100; y++)
             {
                 // Index of the previous triangle relative to the current triangle.
                 i = c->index(prev);
                 
-
+                triangles_visited++;
+                
                 
                 if (clockwise)               
                 { 
                     // This is the point on the edge that we are going to test.
                     const Point & p_current = c->vertex(i)->point();
                     
+                    if (0)//y == 0)
+                    {
+                        // We might need to come back to this test.
+                        omitted_next = c->neighbor(c->cw(i));          
+                        p_omitted    = p_current;                                  
+                    }
                     // If we can see the point through this edge
-                    if ( orientation(p_pivot, p_current, p) == CGAL::RIGHT_TURN )
+                    else if (1 && orientation(p_pivot, p_current, p) == CGAL::RIGHT_TURN )
                     {
                         // continue in this direction.
                         prev = c;
                         c    = c->neighbor(c->ccw(i));
                         
                     } else {
+                        
+                        // We skipped the first test. 
+                        // We might sometimes have to go back and do it. In this case,
+                        // We have to retrieve the missed test, do the orientation,
+                        // and if we find we should have gone through the first 
+                        // triangle, we have wasted one test, and have to move back.
+                        // However, in most situations we do not have to go back.                                            
+                        if (0)//y == 1)
+                        {
+                            if (orientation(p_pivot, p_omitted, p) == CGAL::LEFT_TURN)
+                            {
+                                qDebug() << "Had to backtrack";
+                                
+                                // go backwards.
+                                c    = omitted_next;
+                                clockwise = !clockwise;
+                                break;                                
+                            }
+                        }
+                        
+                        
                         // We have reached the sink node. Check to see if the point
                         // is contained. If not then start from the beginning.
                         const Point & p_final = c->vertex(c->ccw(i))->point();
-                        if ( orientation(p_current, p_final, p) == CGAL::LEFT_TURN )                        
+                        if (orientation(p_current, p_final, p) == CGAL::LEFT_TURN )                        
                         {
                             // We are done;
                             done = true;
@@ -308,18 +347,41 @@ public:
                      // This is the point on the edge that we are going to test.
                         const Point & p_current = c->vertex(i)->point();
 
+
+                        if (0)//y == 0)
+                        {
+                            // We might need to come back to this test.
+                            omitted_next = c->neighbor(c->ccw(i));          
+                            p_omitted    = p_current;
+
+                        }                        
                         // If we can see the point through this edge
-                        if ( orientation(p_pivot, p_current, p) == CGAL::LEFT_TURN )
+                        else if (1 && orientation(p_pivot, p_current, p) == CGAL::LEFT_TURN )
                         {
                             // continue in this direction.
                             prev = c;
                             c    = c->neighbor(c->cw(i));
 
                         } else {
+                            if (0)//y==1)
+                            {
+                                if (orientation(p_pivot, p_omitted, p) == CGAL::RIGHT_TURN)
+                                {
+                                    qDebug() << "Had to backtrack";
+                                    // go backwards.
+                                    c         = omitted_next;
+                                    clockwise = !clockwise;
+                                    break;                                
+                                }
+                            }
+        
+                            
+                            
+                            
                             // We have reached the sink node. Check to see if the point
                             // is contained. If not then start from the beginning.
                             const Point & p_final = c->vertex(c->cw(i))->point();
-                            if (0)// orientation(p_current, p_final, p) == CGAL::RIGHT_TURN )                        
+                            if ( orientation(p_current, p_final, p) == CGAL::RIGHT_TURN )                        
                             {
                                 // We are done;
                                 done = true;
@@ -348,6 +410,7 @@ public:
             
         }
         
+        qDebug() << triangles_visited/(float)pivots_passed;
 
         /*
         
