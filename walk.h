@@ -134,8 +134,18 @@ public:
     PivotWalk(Point p, T* dt, Face_handle f=Face_handle())
     {
         
+        // Create a binary random number generator.
+        boost::rand48 rng;
+        boost::uniform_smallint<> two(0, 1);
+        boost::variate_generator<boost::rand48&, boost::uniform_smallint<> > coin(rng, two);    
+
+        
+        
+        
         int pivots_passed     = 0;
         int triangles_visited = 0;
+        int or_saved=0;
+        int or_lost=0;
         
         qDebug() << "\n\n NEW WALK";
         
@@ -173,6 +183,9 @@ public:
 
         for (int x=0; x<100; x++)
         {
+            
+            clockwise = coin() % 2;
+            
             addToWalk(c);
             
             // Assume we have just walked into a new cell. The first thing to do is decide a direction.
@@ -281,20 +294,22 @@ public:
                 
                 triangles_visited++;
                 
-                
+                if (y==2) or_saved++;
                 if (clockwise)               
                 { 
                     // This is the point on the edge that we are going to test.
                     const Point & p_current = c->vertex(i)->point();
                     
-                    if (0)//y == 0)
+                    if (y == 0)
                     {
                         // We might need to come back to this test.
                         omitted_next = c->neighbor(c->cw(i));          
-                        p_omitted    = p_current;                                  
+                        p_omitted    = p_current; 
+                        prev = c;
+                        c    = c->neighbor(c->ccw(i));                                 
                     }
                     // If we can see the point through this edge
-                    else if (1 && orientation(p_pivot, p_current, p) == CGAL::RIGHT_TURN )
+                    else if (y!=0 && orientation(p_pivot, p_current, p) == CGAL::RIGHT_TURN )
                     {
                         // continue in this direction.
                         prev = c;
@@ -308,14 +323,14 @@ public:
                         // and if we find we should have gone through the first 
                         // triangle, we have wasted one test, and have to move back.
                         // However, in most situations we do not have to go back.                                            
-                        if (0)//y == 1)
+                        if (y == 1)
                         {
                             if (orientation(p_pivot, p_omitted, p) == CGAL::LEFT_TURN)
                             {
                                 qDebug() << "Had to backtrack";
-                                
+                                or_lost++;
                                 // go backwards.
-                                c    = omitted_next;
+                                c         = omitted_next;
                                 clockwise = !clockwise;
                                 break;                                
                             }
@@ -348,25 +363,29 @@ public:
                         const Point & p_current = c->vertex(i)->point();
 
 
-                        if (0)//y == 0)
+                        if (y == 0)
                         {
                             // We might need to come back to this test.
                             omitted_next = c->neighbor(c->ccw(i));          
                             p_omitted    = p_current;
+                            prev = c;
+                            c    = c->neighbor(c->cw(i));
 
                         }                        
                         // If we can see the point through this edge
-                        else if (1 && orientation(p_pivot, p_current, p) == CGAL::LEFT_TURN )
+                        else if (y!=0 && orientation(p_pivot, p_current, p) == CGAL::LEFT_TURN )
                         {
                             // continue in this direction.
                             prev = c;
                             c    = c->neighbor(c->cw(i));
 
                         } else {
-                            if (0)//y==1)
+                            if (y==1)
                             {
                                 if (orientation(p_pivot, p_omitted, p) == CGAL::RIGHT_TURN)
                                 {
+                                    or_lost++;
+                                    
                                     qDebug() << "Had to backtrack";
                                     // go backwards.
                                     c         = omitted_next;
@@ -412,6 +431,9 @@ public:
         
         qDebug() << triangles_visited/(float)pivots_passed;
 
+
+        qDebug() << "Lost: " << or_lost;
+        qDebug() << "Saved: " << or_saved;
         /*
         
         // We swap direction every time we change pivot.
