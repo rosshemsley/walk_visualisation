@@ -148,16 +148,15 @@ public:
         
         this->dt = dt;
 
-        // The user did not provide a face handle. So just use the infinite face.
+        // The user did not provide a face handle. So just use the infinite 
+        // face.
         if (f==Face_handle())
             f=dt->infinite_face();
 
         // This is where we store the current face.
         Face_handle c    = f;    
         Face_handle prev = c;    
-        
-        
-        
+                        
         // **     FIND FIRST FACE      ** //
         for (int i=0; i<3; i++)
         {
@@ -173,29 +172,31 @@ public:
         }
         // ** END OF FIND FIRST FACE ** //
 
-
         
         bool clockwise = TRUE;
         
         for (int x=0; x<100; x++)
         {
-            // First thing to do is choose a direction. We use the value of clockwise to decide this. 
-            // But may have to swap depending on the configuation of the points.            
+            // First thing to do is choose a direction. We use the value of
+            // clockwise to decide this.  But may have to swap depending on 
+            // the configuation of the points.            
             clockwise = random.get_bool();
                         
             addToWalk(c);
             
-            // Assume we have just walked into a new cell. The first thing to do is decide a direction.
+            // Assume we have just walked into a new cell. The first thing 
+            // to do is decide a direction.
             
-            // This is the index of the sink of the last cell relative to the current triangle.
+            // This is the index of the sink of the last cell relative to 
+            // the current triangle.
             int i = c->index(prev);            
             
             // Pivot point.
             const Point & p_pivot = c->vertex(i)->point();                        
             
             // Point linking the pivot to the clockwise face.
-            // ** Note ** cw and ccw are reversed when we are converting between 
-            // a face index and a point index.
+            // ** Note ** cw and ccw are reversed when we are converting 
+            // between a face index and a point index.
             const Point & p_cw = c->vertex(c->ccw(i))->point();
             
             // Point linking the pivot to the counter-clockwise face.
@@ -205,37 +206,42 @@ public:
             if (clockwise)
             {
                 
-                // If visibility does hold in this direction, continue walking around this point
+                // If visibility does hold in this direction, continue 
+                // walking around this point.
                 if (orientation(p_pivot, p_cw, p) == CGAL::RIGHT_TURN )
                 {
                     prev = c;
                     c    = c->neighbor(c->cw(i));
                 }
 
-                // If visibility does hold in this direction, continue walking around this point
-                else if ( orientation(p_pivot, p_ccw, p) == CGAL::LEFT_TURN )
+                // If visibility does hold in this direction, continue 
+                // walking around this point
+                else if (orientation(p_pivot, p_ccw, p) == CGAL::LEFT_TURN)
                 {
                     prev = c;
                     c    = c->neighbor(c->ccw(i));
                     clockwise = !clockwise;
                 }
                 
-                // If both of the above tests failed, then we know that the point is here.
+                // If both of the above tests failed, then we know that 
+                // the point is here.
                 else 
                     break;
 
               
             } else { /* SAME BUT ORDER REVERSED */
                                 
-                // If visibility does hold in this direction, continue walking around this point
-                if ( orientation(p_pivot, p_ccw, p) == CGAL::LEFT_TURN )
+                // If visibility does hold in this direction, continue
+                // walking around this point
+                if ( orientation(p_pivot, p_ccw, p) == CGAL::LEFT_TURN)
                 {
                     prev = c;
                     c    = c->neighbor(c->ccw(i));
                 }
                                 
-                // If visibility does hold in this direction, continue walking around this point
-                else if ( orientation(p_pivot, p_cw, p) == CGAL::RIGHT_TURN )
+                // If visibility does hold in this direction, continue 
+                // walking around this point
+                else if ( orientation(p_pivot, p_cw, p) == CGAL::RIGHT_TURN)
                 {
                     prev = c;
                     c    = c->neighbor(c->cw(i));   
@@ -243,7 +249,8 @@ public:
                                                                         
                 }
                 
-                // If both of the above tests failed, then we know that the point is here.
+                // If both of the above tests failed, then we know that the
+                // point is here.
                 else 
                     break;             
             }
@@ -251,10 +258,12 @@ public:
             pivots.append(p_pivot);                         
             addToWalk(c);            
                         
-            // We should now be going in a good direction in the cell about some pivot point p_pivot.
-            // We continue in the direction given by clockwise until we meet the first edge that is going in the wrong direction
-            // When we meet this we have to test to see if the point is contained within this sink node, and then 
-            // we go again from the start of the loop if it is not.
+            // We should now be going in a good direction in the cell about 
+            // some pivot point p_pivot. We continue in the direction given 
+            // by clockwise until we meet the first edge that is going in the 
+            // wrong direction. When we meet this we have to test to see if
+            // the point is contained within this sink node, and then we go 
+            // again from the start of the loop if it is not.
             bool done = false;
             
             // Statistics gathering.                    
@@ -267,7 +276,8 @@ public:
 
             for (int y=0; y<100; y++)
             {                
-                // Index of the previous triangle relative to the current triangle.
+                // Index of the previous triangle relative to the current 
+                // triangle.
                 i = c->index(prev);
                 
                 // Stastics gathering //
@@ -291,7 +301,8 @@ public:
                     }
                     
                     // If we can see the point through this edge
-                    else if (y!=0 && orientation(p_pivot, p_current, p) == CGAL::RIGHT_TURN)
+                    else if (y!=0 && orientation(p_pivot, p_current, p)
+                                     == CGAL::RIGHT_TURN)
                     {
                         // continue in this direction.
                         prev = c;
@@ -299,20 +310,23 @@ public:
                         
                     } else {
                         // We skipped the first test. 
-                        // We might sometimes have to go back and do it. In this case,
-                        // We have to retrieve the missed test, do the orientation,
-                        // and if we find we should have gone through the first 
-                        // triangle, we have wasted one test, and have to move back.
-                        // However, in most situations we do not have to go back.                                            
+                        // We might sometimes have to go back and do it. In 
+                        // this case. We have to retrieve the missed test, do 
+                        // the orientation, and if we find we should have gone 
+                        // through the first triangle, we have wasted one test, 
+                        // and have to move back. However, in most situations 
+                        // we do not have to go back.    
                         if (y == 1)
                         {
-                            if (orientation(p_pivot, p_omitted, p) == CGAL::LEFT_TURN)
+                            if (orientation(p_pivot, p_omitted, p) 
+                                                            == CGAL::LEFT_TURN)
                             {
-                                // If we reach this point, we have had to backtrack 
-                                // through the skipped triangle.
+                                // If we reach this point, we have had to 
+                                // backtrack through the skipped triangle.
                                 or_lost++;
                                 
-                                if (orientation(p_omitted, p_omitted_final, p) == CGAL::LEFT_TURN)                        
+                                if (orientation(p_omitted, p_omitted_final, p) 
+                                                            == CGAL::LEFT_TURN)
                                 {
                                     // We are done;
                                     done = true;
@@ -326,10 +340,12 @@ public:
                         }
                         
                         
-                        // We have reached the sink node. Check to see if the point
-                        // is contained. If not then start from the beginning.
+                        // We have reached the sink node. Check to see if the 
+                        // point is contained. If not then start from the 
+                        // beginning.
                         const Point & p_final = c->vertex(c->ccw(i))->point();
-                        if (orientation(p_current, p_final, p) == CGAL::LEFT_TURN )                        
+                        if (orientation(p_current, p_final, p) 
+                                                            == CGAL::LEFT_TURN)
                         {
                             // We are done;
                             done = true;
@@ -360,7 +376,8 @@ public:
                     }                        
                         
                     // If we can see the point through this edge
-                    else if (y!=0 && orientation(p_pivot, p_current, p) == CGAL::LEFT_TURN)
+                    else if (y!=0 && orientation(p_pivot, p_current, p) 
+                                                            == CGAL::LEFT_TURN)
                     {
                         // continue in this direction.
                         prev = c;
@@ -369,11 +386,13 @@ public:
                     } else {
                         if (y==1)
                         {
-                            if (orientation(p_pivot, p_omitted, p) == CGAL::RIGHT_TURN)
+                            if (orientation(p_pivot, p_omitted, p) 
+                                                            == CGAL::RIGHT_TURN)
                             {
                                 or_lost++;
                                 
-                                if (orientation(p_omitted, p_omitted_final, p) == CGAL::RIGHT_TURN)                        
+                                if (orientation(p_omitted, p_omitted_final, p) 
+                                                            == CGAL::RIGHT_TURN)                        
                                 {
                                     // We are done;
                                     done = true;
@@ -386,10 +405,12 @@ public:
                             }
                         }
                                                                         
-                        // We have reached the sink node. Check to see if the point
-                        // is contained. If not then start from the beginning.
+                        // We have reached the sink node. Check to see if the 
+                        // point is contained. If not then start from the 
+                        // beginning.
                         const Point & p_final = c->vertex(c->cw(i))->point();
-                        if (orientation(p_current, p_final, p) == CGAL::RIGHT_TURN)
+                        if (orientation(p_current, p_final, p) == 
+                                                              CGAL::RIGHT_TURN)
                         {
                             // We are done;
                             done = true;
@@ -472,7 +493,8 @@ public:
 
         this->dt = dt;
 
-        // The user did not provide a face handle. So just use the infinite face.
+        // The user did not provide a face handle. So just use the infinite 
+        // face.
         if (f==Face_handle())
             f=dt->infinite_face();
 
